@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDV Contingência</title>
+    <style>
+        :root { 
+            --bg: #1e1e2e; 
+            --surface: #2a2a3b; 
+            --primary: #00d289; 
+            --text: #ffffff; 
+            --border: #3f3f5a; 
+            --danger: #ff4a4a;
+            --radius: 10px;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; overflow-x: hidden; }
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+        
+        header { display: flex; justify-content: center; align-items: center; padding: 15px 20px; background: var(--surface); border-bottom: 1px solid var(--border); position: relative; height: 70px; }
+        .header-left { position: absolute; left: 20px; display: flex; align-items: center; gap: 15px; }
+        .hamburger-btn { background: transparent; color: var(--text); border: none; font-size: 28px; cursor: pointer; padding: 5px; }
+        .hamburger-btn:hover { color: var(--primary); }
+        .btn-home { background: transparent; color: var(--primary); border: 1px solid var(--primary); border-radius: var(--radius); padding: 8px 15px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn-home:hover { background: var(--primary); color: #000; }
+
+        .btn-success { background: var(--primary) !important; color: #000 !important; font-weight: bold; border: none !important; border-radius: var(--radius); cursor: pointer; padding: 10px 20px; font-size: 16px; }
+        .btn-success:disabled { background: #555 !important; color: #888 !important; cursor: not-allowed; }
+        
+        .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: var(--surface); border-right: 1px solid var(--border); z-index: 2000; transition: left 0.3s ease; display: flex; flex-direction: column; padding: 70px 0 20px 0; box-shadow: 5px 0 15px rgba(0,0,0,0.5); overflow-y: auto; }
+        .sidebar.open { left: 0; }
+        .sidebar button { background: transparent; color: var(--text); border: none; padding: 20px; text-align: left; font-size: 1.1em; border-bottom: 1px solid var(--border); cursor: pointer; width: 100%; border-radius: 0; }
+        .sidebar button:hover { background: var(--border); color: var(--primary); padding-left: 25px; }
+        .close-sidebar { position: absolute; top: 15px; right: 20px; font-size: 28px; cursor: pointer; color: var(--text); }
+        .close-sidebar:hover { color: var(--danger); }
+        .sidebar-bottom { margin-top: auto; border-top: 2px solid var(--border); background: rgba(0,0,0,0.2); }
+        
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); z-index: 1999; backdrop-filter: blur(2px); }
+        .sidebar-overlay.open { display: block; }
+
+        .view { display: none; padding: 20px; }
+        .view.active { display: block; }
+        
+        /* LOGIN VIEW */
+        #login-view { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); position: fixed; top: 0; left: 0; width: 100vw; z-index: 9999; }
+        .login-box { background: var(--surface); padding: 40px; border-radius: var(--radius); border: 1px solid var(--border); width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; background: var(--bg); color: white; border: 1px solid var(--border); border-radius: 5px; outline: none; text-align: center; }
+        .login-box input:focus { border-color: var(--primary); }
+        
+        /* KANBAN E OP */
+        .op-banner { background: var(--surface); border: 1px solid var(--border); padding: 15px 20px; border-radius: var(--radius); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .status-badge.open { color: var(--primary); font-weight: bold; }
+        .status-badge.closed { color: var(--danger); font-weight: bold; }
+
+        .kanban { display: flex; gap: 20px; height: calc(100vh - 190px); }
+        .column { flex: 1; background: var(--surface); border-radius: var(--radius); padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .column h3 { margin-top: 0; text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .order-card { background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: var(--radius); display: flex; flex-direction: column; }
+        .order-card-body { flex-grow: 1; cursor: pointer; padding-bottom: 5px; }
+        .order-card-body:hover { opacity: 0.8; }
+        .card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
+        .icon-btn { width: 26px; height: 26px; padding: 0; cursor: pointer; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: 0.2s; }
+        .icon-btn:hover { background: var(--border); transform: scale(1.1); }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 5000; }
+        .modal-content { background: var(--bg); width: 95vw; height: 95vh; margin: 2.5vh auto; display: flex; border-radius: var(--radius); overflow: hidden; position: relative; }
+        .close-btn { position: absolute; top: 10px; right: 20px; font-size: 24px; cursor: pointer; z-index: 1001; }
+        
+        .pdv-left { width: 30%; background: var(--surface); padding: 20px; display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
+        .pdv-right { width: 70%; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Formulários e Checkboxes */
+        .form-group { margin-bottom: 15px; width: 100%; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #aaa; text-align: left; }
+        .form-group input:not([type="checkbox"]), .form-group select, textarea { width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); outline: none; font-family: inherit; resize: vertical; }
+        .form-group input:focus, textarea:focus { border-color: var(--primary); }
+        
+        .checkbox-group { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 12px; border-radius: var(--radius); background: var(--bg); margin-top: 5px; }
+        .checkbox-item { display: flex; align-items: center; justify-content: flex-start; gap: 10px; margin-bottom: 8px; text-align: left; }
+        .checkbox-item input[type="checkbox"] { width: 18px !important; height: 18px !important; margin: 0; cursor: pointer; flex-shrink: 0; }
+        .checkbox-item label { margin: 0 !important; color: var(--text) !important; font-size: 0.95em !important; cursor: pointer; text-align: left; display: block; flex-grow: 1; }
+
+        .selection-btn { width: 100%; padding: 12px 15px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1em; }
+        .selection-btn:hover { border-color: var(--primary); }
+        
+        .grid-selection { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; max-height: 50vh; overflow-y: auto; padding-right: 5px; }
+        .grid-selection-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 15px; border-radius: var(--radius); cursor: pointer; text-align: center; font-weight: bold; font-size: 1em; display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; transition: 0.2s; line-height: 1.2; }
+        .grid-selection-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+
+        .modifier-grid-btn.selected { background: var(--surface); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 10px rgba(0, 210, 137, 0.2); }
+
+        #cart-items { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border); padding: 10px; margin-bottom: 15px; border-radius: var(--radius); background: var(--bg); }
+        .cart-item { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.9em; border-bottom: 1px dashed var(--border); padding-bottom: 10px; flex-direction: column; }
+        
+        .category-tabs { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; flex-shrink: 0; }
+        .category-tabs button { padding: 10px; background: var(--surface); border: 1px solid var(--border); color: white; cursor: pointer; white-space: nowrap; border-radius: var(--radius); }
+        
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; align-content: start; }
+        
+        /* CARD DE PRODUTO PDV */
+        .product-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); display: flex; flex-direction: column; height: 190px; overflow: hidden; position: relative; transition: 0.2s; }
+        .product-card:hover { border-color: var(--primary); }
+        .product-main-click { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; cursor: pointer; }
+        .product-main-click img { width: 100%; height: 100px; object-fit: cover; border-radius: 5px; margin-bottom: 8px; background: var(--bg); flex-shrink: 0; }
+        .product-main-click .no-image { width: 100%; height: 100px; border-radius: 5px; margin-bottom: 8px; background: var(--bg); display: flex; align-items: center; justify-content: center; color: #555; font-size: 0.8em; flex-shrink: 0; border: 1px dashed var(--border); }
+        .product-card-title { font-weight: bold; font-size: 0.9em; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.2; text-align: center; }
+        .product-card-price { color: var(--primary); font-size: 0.9em; text-align: center; }
+        
+        /* BOTÃO DE MODIFICADORES ⚙️ */
+        .modifier-btn { position: absolute; bottom: 8px; right: 8px; background: var(--bg); color: var(--text); border: 1px solid var(--border); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; z-index: 10; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .modifier-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); transform: scale(1.1); }
+
+        /* PAINEL DIVIDIDO (MODIFICADORES) */
+        .mod-split-container { display: flex; gap: 20px; width: 100%; flex-grow: 1; min-height: 0; }
+        .mod-half { flex: 1; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px; }
+        .mod-half h4 { margin: 0 0 10px 0; font-size: 1em; border-bottom: 1px solid var(--border); padding-bottom: 10px; text-align: center; }
+        .mod-half.exclusion h4 { color: var(--danger); }
+        .mod-half.addon h4 { color: var(--primary); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        
+        .menu-dashboard { display: flex; flex-direction: column; gap: 20px; }
+        .menu-top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 15px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .toggle-container { display: flex; background: var(--bg); padding: 5px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .toggle-container button { background: transparent; color: var(--text); border: none; padding: 8px 15px; cursor: pointer; border-radius: calc(var(--radius) - 3px); font-weight: bold; }
+        .toggle-container button.active { background: var(--primary); color: #000; }
+        .menu-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .menu-item-card { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 15px 20px; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; }
+        .menu-item-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .item-info { display: flex; flex-direction: column; gap: 4px; }
+        .item-title { font-size: 1.1em; font-weight: bold; }
+        .item-subtitle { font-size: 0.85em; color: #aaa; }
+        .item-actions { display: flex; gap: 8px; }
+        .item-actions button { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; font-size: 0.85em; }
+        .item-actions button:hover { background: var(--border); border-color: var(--text); }
+        .item-actions button.btn-delete:hover { background: var(--danger); border-color: var(--danger); color: white; }
+        
+        .mini-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 6000; }
+        .mini-modal-content { background: var(--surface); width: 500px; max-width: 90vw; margin: 10vh auto; padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); position: relative; max-height: 80vh; overflow-y: auto; }
+        
+        .profile-pic-container { text-align: center; margin-bottom: 20px; }
+        .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: var(--bg); margin-bottom: 10px; display: inline-block; }
+        
+        /* Impressão Bobina Customizada */
+        @media print {
+            body * { visibility: hidden; }
+            #print-section, #print-section * { visibility: visible; }
+            #print-section { position: absolute; left: 0; top: 0; color: black; background: white; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+    <div id="loader-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <h2 style="color: var(--primary);">Conectando...</h2>
+        <p style="color: #aaa;">Sincronizando dados da operação</p>
+    </div>
+
+    <div id="system-dialog" class="modal-overlay" style="z-index: 9999999;">
+        <div class="modal-content" style="width: 350px; height: auto; margin: 30vh auto; display: flex; flex-direction: column; padding: 25px; text-align: center; border: 1px solid var(--border);">
+            <h3 id="dialog-title" style="margin-top: 0; color: var(--primary);">Aviso</h3>
+            <p id="dialog-message" style="color: #aaa; margin-bottom: 20px; font-size: 0.95em; line-height: 1.4; text-align: center;"></p>
+            <input type="text" id="dialog-input" style="display: none; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); margin-bottom: 20px; outline: none; width: 100%; text-align: center;" onkeypress="if(event.key === 'Enter') { document.getElementById('btn-dialog-confirm').click(); }">
+            <div style="display: flex; gap: 10px; justify-content: center;" id="dialog-buttons"></div>
+        </div>
+    </div>
+
+    <div id="login-view">
+        <div class="login-box">
+            <h2 style="color: var(--primary); margin-top: 0;">La Partigiana</h2>
+            <p style="color: #aaa; font-size: 0.9em; margin-bottom: 30px;">Acesso ao PDV</p>
+            
+            <input type="text" id="login-user" placeholder="Usuário" onkeypress="if(event.key === 'Enter') handleLogin()">
+            
+            <div style="position: relative; width: 100%; margin-bottom: 20px;">
+                <input type="password" id="login-pass" placeholder="Senha" style="margin-bottom: 0; width: 100%; padding-right: 40px;" onkeypress="if(event.key === 'Enter') handleLogin()">
+                <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2em; padding: 0;">👁️</button>
+            </div>
+
+            <button class="btn-success" style="width: 100%;" onclick="handleLogin()">ENTRAR</button>
+        </div>
+    </div>
+
+    <div id="app-container" style="display: none;">
+        <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <div id="sidebar" class="sidebar">
+            <span class="close-sidebar" onclick="toggleSidebar()">&times;</span>
+            
+            <div id="sidebar-dynamic-links"></div>
+
+            <div class="sidebar-bottom">
+                <button onclick="switchViewAndClose('profile-view')">👤 Meu Usuário</button>
+                <button id="nav-print-settings" onclick="switchViewAndClose('print-settings-view')" style="display:none;">🖨️ Impressão (Comanda)</button>
+                <button id="nav-settings" onclick="switchViewAndClose('settings-view')" style="display:none;">⚙️ Configurações</button>
+                <button onclick="handleLogout()" style="color: var(--danger);">Sair</button>
+            </div>
+        </div>
+
+        <header>
+            <div class="header-left">
+                <button class="hamburger-btn" onclick="toggleSidebar()">☰</button>
+                <button id="btn-header-kanban" class="btn-home" onclick="switchViewAndClose('kanban-view')" style="display: none;">🏠 KANBAN</button>
+            </div>
+            <button id="btn-master-pedido" class="btn-success" onclick="openOrderModal()">REALIZAR PEDIDO</button>
+        </header>
+
+        <div id="kanban-view" class="view">
+            <div class="op-banner">
+                <div>
+                    Status do Caixa: <span id="shift-status-badge" class="status-badge closed">Fechado</span>
+                </div>
+                <button id="btn-shift-toggle" class="btn-success" onclick="toggleShift()">ABRIR OPERAÇÃO</button>
+            </div>
+            <div class="kanban">
+                <div class="column" id="col-preparo"><h3>Em Preparo</h3></div>
+                <div class="column" id="col-entregue"><h3>Entregues</h3></div>
+                <div class="column" id="col-cancelado"><h3>Cancelados</h3></div>
+            </div>
+        </div>
+
+        <div id="menu-view" class="view">
+            <div class="menu-dashboard">
+                <div class="menu-top-bar">
+                    <div class="toggle-container">
+                        <button id="tab-categories" class="active" onclick="switchMenuTab('categories')">Categorias</button>
+                        <button id="tab-products" onclick="switchMenuTab('products')">Produtos</button>
+                        <button id="tab-modifiers" onclick="switchMenuTab('modifiers')">Modificadores</button>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-success" style="padding: 10px 15px;" onclick="openCategoryForm()">+ Categoria</button>
+                        <button class="btn-success" style="padding: 10px 15px;" onclick="openProductForm()">+ Produto</button>
+                        <button class="btn-success" style="padding: 10px 15px;" onclick="openModifierForm()">+ Modificador</button>
+                    </div>
+                </div>
+                <div id="menu-content-area" class="menu-list"></div>
+            </div>
+        </div>
+
+        <div id="tables-view" class="view">
+            <div class="menu-dashboard">
+                <div class="menu-top-bar">
+                    <h2 style="margin:0; color:var(--text);">Gestão de Mesas / Locais</h2>
+                    <button class="btn-success" style="padding: 10px 20px;" onclick="openTableForm()">+ Adicionar Mesa</button>
+                </div>
+                <div id="tables-list-area" class="menu-list"></div>
+            </div>
+        </div>
+
+        <div id="payments-view" class="view">
+            <div class="menu-dashboard">
+                <div class="menu-top-bar">
+                    <h2 style="margin:0; color:var(--text);">Métodos de Pagamento</h2>
+                    <button class="btn-success" style="padding: 10px 20px;" onclick="openPaymentForm()">+ Adicionar Método</button>
+                </div>
+                <div id="payments-list-area" class="menu-list"></div>
+            </div>
+        </div>
+
+        <div id="reports-view" class="view">
+            <h2>Relatório de Vendas (Inclui Arquivados)</h2>
+            <input type="date" id="report-date" onchange="renderReports()" style="padding:10px; background:var(--bg); color:white; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px;">
+            <h3 id="report-total">Total: R$ 0,00</h3>
+            <table id="reports-table">
+                <thead><tr><th>ID</th><th>Data/Hora</th><th>Mesa</th><th>Cliente</th><th>Pagamento</th><th>Total</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div id="profile-view" class="view">
+            <div class="menu-dashboard" style="max-width: 600px; margin: 0 auto; background: var(--surface); padding: 30px; border-radius: var(--radius); border: 1px solid var(--border);">
+                <h2 style="margin-top:0; text-align:center; color: var(--primary);">Meu Usuário</h2>
+                
+                <div class="profile-pic-container">
+                    <img id="profile-pic-preview" class="profile-pic" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Foto">
+                    <br>
+                    <label for="profile-pic-upload" style="background:var(--bg); padding:8px 15px; border-radius:5px; border:1px solid var(--border); cursor:pointer; font-size:0.9em;">📷 Alterar Foto</label>
+                    <input type="file" id="profile-pic-upload" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
+                    <div style="font-size:0.7em; color:#888; margin-top:5px;">A imagem será auto-comprimida para não travar o banco.</div>
+                </div>
+
+                <div style="display:flex; gap:15px;">
+                    <div class="form-group"><label>Nome Completo</label><input type="text" id="prof-name"></div>
+                    <div class="form-group"><label>Data de Nasc.</label><input type="date" id="prof-dob"></div>
+                </div>
+                <div style="display:flex; gap:15px;">
+                    <div class="form-group"><label>E-mail</label><input type="email" id="prof-email"></div>
+                    <div class="form-group"><label>Telefone</label><input type="text" id="prof-phone"></div>
+                </div>
+                <div class="form-group">
+                    <label>Cargo / Função (Visualização)</label>
+                    <input type="text" id="prof-role" disabled style="opacity: 0.7;">
+                </div>
+                
+                <button class="btn-success" style="width:100%; margin-top:10px;" onclick="saveMyProfile()">SALVAR MEUS DADOS</button>
+            </div>
+        </div>
+
+        <div id="settings-view" class="view">
+            <div class="menu-dashboard">
+                <div class="menu-top-bar">
+                    <div class="toggle-container">
+                        <button id="tab-adm-profiles" class="active" onclick="switchAdminTab('profiles')">Tipos de Perfis</button>
+                        <button id="tab-adm-users" onclick="switchAdminTab('users')">Usuários</button>
+                    </div>
+                    <button class="btn-success" style="padding: 10px 20px;" onclick="openAdminForm()">+ Adicionar Novo</button>
+                </div>
+                <div id="admin-list-area" class="menu-list"></div>
+            </div>
+        </div>
+
+        <div id="print-settings-view" class="view">
+            <div class="menu-dashboard">
+                <div class="menu-top-bar">
+                    <h2 style="margin:0; color:var(--text);">Configuração da Comanda (Impressora)</h2>
+                </div>
+                
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 300px; background: var(--surface); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);">
+                        <div class="form-group">
+                            <label>Largura da Bobina (mm)</label>
+                            <input type="number" id="cfg-print-width" value="80" oninput="updatePrintPreview()">
+                            <small style="color:#aaa; display:block; margin-top:5px;">Padrão: 80mm ou 58mm</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Tamanho Base da Fonte (px)</label>
+                            <input type="number" id="cfg-print-size" value="12" oninput="updatePrintPreview()">
+                        </div>
+                        <div class="form-group">
+                            <label>Família da Fonte</label>
+                            <select id="cfg-print-font" onchange="updatePrintPreview()">
+                                <option value="monospace">Monospace (Tradicional de Cupom)</option>
+                                <option value="Arial, sans-serif">Arial / Sans-Serif</option>
+                                <option value="'Times New Roman', serif">Times New Roman / Serif</option>
+                            </select>
+                        </div>
+                        <div class="checkbox-item" style="margin-top: 20px;">
+                            <input type="checkbox" id="cfg-print-bold" onchange="updatePrintPreview()">
+                            <label for="cfg-print-bold">Forçar Texto Inteiro em Negrito</label>
+                        </div>
+                        
+                        <button class="btn-success" style="width: 100%; margin-top: 20px;" onclick="savePrintConfig()">SALVAR CONFIGURAÇÃO</button>
+                    </div>
+
+                    <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; align-items: flex-start; background: #fff; padding: 20px; border-radius: var(--radius); overflow-x: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                        <div id="print-preview-container" style="background: white; color: black; padding: 10px; border: 1px dashed #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> <div id="order-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeOrderModal()">&times;</span>
+            
+            <div class="pdv-left">
+                <h2 id="order-modal-title">Novo Pedido</h2>
+                <div class="form-group">
+                    <input type="text" id="pdv-client" placeholder="Nome do Cliente (Opcional)">
+                </div>
+                
+                <div class="form-group">
+                    <button type="button" id="btn-pdv-table" class="selection-btn" onclick="openTableSelection()">
+                        <span>Selecionar Mesa</span>
+                        <span>▼</span>
+                    </button>
+                    <input type="hidden" id="pdv-table" value="">
+                </div>
+                
+                <div id="cart-items"></div>
+                <h3 style="text-align: right;" id="cart-total">Total: R$ 0,00</h3>
+
+                <div class="form-group">
+                    <button type="button" id="btn-pdv-payment" class="selection-btn" onclick="openPaymentSelection()">
+                        <span>Selecionar Pagamento</span>
+                        <span>▼</span>
+                    </button>
+                    <input type="hidden" id="pdv-payment" value="">
+                </div>
+
+                <div class="form-group">
+                    <input type="text" id="pdv-cpf" placeholder="CPF na Nota (Opcional)">
+                </div>
+                <div class="checkbox-item" style="margin-top: 15px;">
+                    <input type="checkbox" id="pdv-print" checked>
+                    <label for="pdv-print">Imprimir na Cozinha</label>
+                </div>
+                
+                <button id="btn-finalize-order" class="btn-success" style="padding: 15px; width: 100%; font-size: 16px; margin-top: 15px;" onclick="finalizeOrder()">FINALIZAR PEDIDO</button>
+            </div>
+
+            <div class="pdv-right">
+                
+                <div id="pdv-catalog-panel" style="display: flex; flex-direction: column; height: 100%;">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <input type="text" id="pdv-search" placeholder="Pesquisar produto pelo nome..." oninput="searchPdvProducts(this.value)">
+                    </div>
+                    <div class="category-tabs" id="pdv-categories"></div>
+                    <div class="products-grid" id="pdv-products"></div>
+                </div>
+
+                <div id="pdv-modifier-panel" style="display: none; flex-direction: column; height: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">
+                        <h3 id="mod-panel-title" style="margin: 0; color: var(--primary);">Personalizar Pedido</h3>
+                        <button onclick="cancelModifierSelection()" style="background: none; border: none; color: var(--danger); font-size: 24px; cursor: pointer;">&times;</button>
+                    </div>
+                    
+                    <div class="mod-split-container">
+                        <div class="mod-half exclusion">
+                            <h4>Exclusões / Retiradas</h4>
+                            <div id="mod-panel-grid-exc" class="grid-selection" style="flex-grow: 1; align-content: start;"></div>
+                        </div>
+                        
+                        <div class="mod-half addon">
+                            <h4>Adicionais</h4>
+                            <div id="mod-panel-grid-add" class="grid-selection" style="flex-grow: 1; align-content: start;"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Observações Adicionais (ex: Ponto da carne, extra crocante)</label>
+                        <textarea id="mod-panel-obs" placeholder="Digite aqui..." style="height: 60px;"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button onclick="cancelModifierSelection()" style="padding: 15px; border-radius: var(--radius); background: var(--surface); color: var(--text); border: 1px solid var(--border); cursor: pointer; flex: 1; font-weight: bold;">Cancelar</button>
+                        <button class="btn-success" id="btn-confirm-modifiers" style="flex: 2; padding: 15px; font-size: 16px;" onclick="confirmModifiersAndAddPanel()">Adicionar ao Pedido</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="mini-modal" class="mini-modal">
+        <div class="mini-modal-content">
+            <span class="close-btn" onclick="closeMiniModal()">&times;</span>
+            <h3 id="mini-modal-title">Título</h3>
+            <div id="mini-modal-body"></div>
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;" id="mini-modal-footer"></div>
+        </div>
+    </div>
+
+    <div id="print-section" style="display: none;"></div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAÇÃO DO FIREBASE (BLINDADA CONTRA FALHA DE REDE)
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdZ4XRJ8PuNjCIqfTj2vKvLusRg1omwzU",
+            authDomain: "pdv-pizzaria-31ed6.firebaseapp.com",
+            projectId: "pdv-pizzaria-31ed6",
+            storageBucket: "pdv-pizzaria-31ed6.firebasestorage.app",
+            messagingSenderId: "549419694659",
+            appId: "1:549419694659:web:a37ba934910a9ac24c32f6"
+        };
+
+        let cloudDb = null;
+        let docRef = null;
+
+        // Try-Catch para não travar se o Google estiver bloqueado
+        try {
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                cloudDb = firebase.firestore();
+                docRef = cloudDb.collection("pdv").doc("lapartigiana");
+            } else {
+                console.warn("Script do Firebase não foi carregado (Sem Internet).");
+            }
+        } catch (e) {
+            console.error("Erro na inicialização do Firebase:", e);
+        }
+
+        let db = {
+            categories: ['Pizzas Salgadas', 'Pizzas Doces', 'Bebidas'],
+            products: [],
+            modifiers: [], 
+            orders: [],
+            tables: ['Mesa 01', 'Mesa 02', 'Mesa 03', 'Mesa Preta 01', 'Mesa Quadrada 01', 'Balcão'],
+            paymentMethods: ['Pix', 'Dinheiro', 'Crédito', 'Débito'],
+            profiles: [],
+            users: [],
+            shiftOpen: false,
+            printConfig: { width: 80, fontSize: 12, fontFamily: 'monospace', bold: false }
+        };
+
+        let currentSessionUser = null;
+        let currentCart = [];
+        let currentCategoryFilter = '';
+        let currentSearchTerm = '';
+        let activeMenuTab = 'categories';
+        let activeAdminTab = 'profiles';
+        let editingOrderId = null; 
+        let isInitDone = false;
+        
+        let currentModProductId = null; 
+
+        // --- SISTEMA DE DIÁLOGOS ---
+        function showCustomAlert(msg, title = 'Aviso') {
+            document.getElementById('dialog-title').innerText = title;
+            document.getElementById('dialog-message').innerText = msg;
+            document.getElementById('dialog-input').style.display = 'none';
+            document.getElementById('dialog-buttons').innerHTML = `<button class="btn-success" style="flex:1;" onclick="closeSystemDialog()">OK</button>`;
+            document.getElementById('system-dialog').style.display = 'block';
+        }
+
+        function showCustomConfirm(msg, onConfirm, title = 'Confirmação') {
+            document.getElementById('dialog-title').innerText = title;
+            document.getElementById('dialog-message').innerText = msg;
+            document.getElementById('dialog-input').style.display = 'none';
+            window.dialogConfirmCallback = onConfirm;
+            document.getElementById('dialog-buttons').innerHTML = `
+                <button onclick="closeSystemDialog()" style="padding: 10px 15px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex: 1;">Cancelar</button>
+                <button class="btn-success" style="flex: 1;" onclick="let cb = window.dialogConfirmCallback; closeSystemDialog(); if(cb) cb();">Confirmar</button>
+            `;
+            document.getElementById('system-dialog').style.display = 'block';
+        }
+
+        function showCustomPrompt(msg, defaultVal, onConfirm, title = 'Entrada de Dados') {
+            document.getElementById('dialog-title').innerText = title;
+            document.getElementById('dialog-message').innerText = msg;
+            let input = document.getElementById('dialog-input');
+            input.style.display = 'block';
+            input.value = defaultVal || '';
+            window.dialogPromptCallback = onConfirm;
+            document.getElementById('dialog-buttons').innerHTML = `
+                <button onclick="closeSystemDialog()" style="padding: 10px 15px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex: 1;">Cancelar</button>
+                <button id="btn-dialog-confirm" class="btn-success" style="flex: 1;" onclick="let val = document.getElementById('dialog-input').value; let cb = window.dialogPromptCallback; closeSystemDialog(); if(cb) cb(val);">Salvar</button>
+            `;
+            document.getElementById('system-dialog').style.display = 'block';
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closeSystemDialog() {
+            document.getElementById('system-dialog').style.display = 'none';
+            window.dialogConfirmCallback = null;
+            window.dialogPromptCallback = null;
+        }
+
+        // --- SISTEMA DE INICIALIZAÇÃO BLINDADO ---
+        function finishInit() {
+            if (isInitDone) return;
+            isInitDone = true;
+            document.getElementById('loader-overlay').style.display = 'none';
+            let savedSession = sessionStorage.getItem('pdv_user_id');
+            if (savedSession) {
+                let user = db.users.find(u => u.id == savedSession);
+                if (user) {
+                    loginSuccess(user);
+                    return;
+                }
+            }
+        }
+
+        function fallbackOffline() {
+            if (isInitDone) return; 
+            try {
+                let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
+                if (localFallback) { db = localFallback; }
+            } catch(e) { console.error("Erro no LocalStorage", e); }
+            ensureIntegrity();
+            finishInit();
+        }
+
+        function initApp() {
+            // TIMEOUT ANTI-TRAVA: Força o modo local se demorar > 3 seg
+            setTimeout(() => {
+                if (!isInitDone) {
+                    console.warn("Timeout de nuvem. Forçando modo Local.");
+                    fallbackOffline();
+                }
+            }, 3000);
+
+            if (docRef) {
+                docRef.get().then((doc) => {
+                    if (doc.exists) {
+                        db = doc.data();
+                        ensureIntegrity();
+                    } else {
+                        fallbackOffline();
+                        docRef.set(db).catch(e=>{}); 
+                    }
+                    finishInit();
+                }).catch((error) => {
+                    console.error("Modo Offline Ativado pelo Catch.", error);
+                    fallbackOffline();
+                });
+            } else {
+                fallbackOffline();
+            }
+        }
+
+        function ensureIntegrity() {
+            if (!db.tables) db.tables = ['Mesa 01', 'Mesa 02', 'Balcão'];
+            if (!db.paymentMethods) db.paymentMethods = ['Pix', 'Dinheiro', 'Cartão'];
+            if (!db.modifiers) db.modifiers = [];
+            
+            // Migração de Modificadores Antigos (Se não tiver tipo, vira 'addon')
+            db.modifiers.forEach(m => {
+                if (!m.type) m.type = 'addon';
+            });
+
+            if (typeof db.shiftOpen === 'undefined') db.shiftOpen = false;
+            if (!db.printConfig) db.printConfig = { width: 80, fontSize: 12, fontFamily: 'monospace', bold: false };
+            
+            if (!db.profiles || db.profiles.length === 0) {
+                db.profiles = [
+                    { id: 1, name: 'Administrador Master', perms: ['kanban-view', 'menu-view', 'tables-view', 'payments-view', 'reports-view', 'settings-view'] },
+                    { id: 2, name: 'Atendente / Caixa', perms: ['kanban-view', 'tables-view', 'payments-view'] }
+                ];
+            }
+            if (!db.users || db.users.length === 0) {
+                db.users = [
+                    { id: 1, login: 'vitor.sontak', pass: 'Yasuo010118*', name: 'Vítor Martins Sontak', dob: '', email: '', phone: '', role: 'Sócio/Administrador', photo: '', profileId: 1 }
+                ];
+            }
+            try { localStorage.setItem('pdv_db', JSON.stringify(db)); } catch(e){}
+        }
+
+        function saveDb() { 
+            try { localStorage.setItem('pdv_db', JSON.stringify(db)); } catch(e){}
+            if (docRef) {
+                docRef.set(db).catch(err => console.error("Falha Nuvem:", err));
+            }
+        }
+
+        // --- SISTEMA DE LOGIN E SESSÃO ---
+        function togglePasswordVisibility() {
+            let input = document.getElementById('login-pass');
+            input.type = input.type === "password" ? "text" : "password";
+        }
+
+        function handleLogin() {
+            let userIn = document.getElementById('login-user').value.trim();
+            let passIn = document.getElementById('login-pass').value;
+            let user = db.users.find(u => u.login === userIn && u.pass === passIn);
+            if (user) {
+                sessionStorage.setItem('pdv_user_id', user.id);
+                loginSuccess(user);
+            } else {
+                showCustomAlert("Usuário ou senha incorretos.", "Falha no Login");
+            }
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('pdv_user_id');
+            currentSessionUser = null;
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('btn-header-kanban').style.display = 'none';
+            document.getElementById('login-view').style.display = 'flex';
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+        }
+
+        function loginSuccess(user) {
+            currentSessionUser = user;
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+            buildSidebar(); loadMyProfile(); updateShiftUI(); switchViewAndClose('kanban-view');
+        }
+
+        // --- CONTROLE DE ACESSO E SIDEBAR ---
+        function getMyPerms() {
+            if(!currentSessionUser) return [];
+            let prof = db.profiles.find(p => p.id == currentSessionUser.profileId);
+            return prof ? prof.perms : [];
+        }
+
+        function buildSidebar() {
+            const perms = getMyPerms();
+            let html = '';
+
+            if (perms.includes('kanban-view')) {
+                document.getElementById('btn-header-kanban').style.display = 'block';
+            } else {
+                document.getElementById('btn-header-kanban').style.display = 'none';
+            }
+
+            if (perms.includes('menu-view')) html += `<button onclick="switchViewAndClose('menu-view')">Gestão de Cardápio</button>`;
+            if (perms.includes('tables-view')) html += `<button onclick="switchViewAndClose('tables-view')">Gestão de Mesas</button>`;
+            if (perms.includes('payments-view')) html += `<button onclick="switchViewAndClose('payments-view')">Métodos de Pag.</button>`;
+            if (perms.includes('reports-view')) html += `<button onclick="switchViewAndClose('reports-view')">Relatório de Vendas</button>`;
+            
+            document.getElementById('sidebar-dynamic-links').innerHTML = html;
+            
+            let showSettings = perms.includes('settings-view');
+            document.getElementById('nav-settings').style.display = showSettings ? 'block' : 'none';
+            document.getElementById('nav-print-settings').style.display = showSettings ? 'block' : 'none';
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('open');
+        }
+
+        function switchViewAndClose(viewId) {
+            let perms = getMyPerms();
+            if(viewId !== 'profile-view' && viewId !== 'print-settings-view' && !perms.includes(viewId)) {
+                showCustomAlert("Acesso Negado a esta área.", "Bloqueado"); return;
+            }
+            if(viewId === 'print-settings-view' && !perms.includes('settings-view')) {
+                showCustomAlert("Acesso Negado a esta área.", "Bloqueado"); return;
+            }
+
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+            
+            if(viewId === 'kanban-view') renderKanban();
+            if(viewId === 'menu-view') renderMenuDashboard();
+            if(viewId === 'tables-view') renderTablesDashboard();
+            if(viewId === 'payments-view') renderPaymentsDashboard();
+            if(viewId === 'reports-view') renderReports();
+            if(viewId === 'settings-view') renderAdminDashboard();
+            if(viewId === 'print-settings-view') loadPrintConfig();
+        }
+
+        function switchMenuTab(tab) {
+            activeMenuTab = tab;
+            document.getElementById('tab-categories').classList.toggle('active', tab === 'categories');
+            document.getElementById('tab-products').classList.toggle('active', tab === 'products');
+            document.getElementById('tab-modifiers').classList.toggle('active', tab === 'modifiers');
+            renderMenuDashboard();
+        }
+
+        function switchAdminTab(tab) {
+            activeAdminTab = tab;
+            document.getElementById('tab-adm-profiles').classList.toggle('active', tab === 'profiles');
+            document.getElementById('tab-adm-users').classList.toggle('active', tab === 'users');
+            renderAdminDashboard();
+        }
+
+        function closeMiniModal() { document.getElementById('mini-modal').style.display = 'none'; }
+
+
+        // --- MEU PERFIL E FOTO ---
+        function loadMyProfile() {
+            let u = currentSessionUser;
+            document.getElementById('prof-name').value = u.name || '';
+            document.getElementById('prof-dob').value = u.dob || '';
+            document.getElementById('prof-email').value = u.email || '';
+            document.getElementById('prof-phone').value = u.phone || '';
+            let profObj = db.profiles.find(x => x.id == u.profileId);
+            document.getElementById('prof-role').value = profObj ? profObj.name : (u.role || '');
+            document.getElementById('profile-pic-preview').src = u.photo || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; 
+        }
+
+        function saveMyProfile() {
+            let u = db.users.find(x => x.id == currentSessionUser.id);
+            if(u) {
+                u.name = document.getElementById('prof-name').value;
+                u.dob = document.getElementById('prof-dob').value;
+                u.email = document.getElementById('prof-email').value;
+                u.phone = document.getElementById('prof-phone').value;
+                u.photo = document.getElementById('profile-pic-preview').src;
+                currentSessionUser = u; saveDb();
+                showCustomAlert("Perfil salvo com sucesso.", "Sucesso");
+            }
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = function (e) {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = function () {
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    canvas.width = 150; canvas.height = 150;
+                    const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+                    const x = (canvas.width / scale - img.width) / 2; const y = (canvas.height / scale - img.height) / 2;
+                    ctx.drawImage(img, x, y, img.width, img.height, 0, 0, img.width * scale, img.height * scale);
+                    document.getElementById('profile-pic-preview').src = canvas.toDataURL('image/webp', 0.8);
+                }
+            }
+        }
+
+        // --- GESTÃO DE OPERAÇÃO / TURNO ---
+        function updateShiftUI() {
+            let badge = document.getElementById('shift-status-badge');
+            let btn = document.getElementById('btn-shift-toggle');
+            let btnPedido = document.getElementById('btn-master-pedido');
+
+            if (db.shiftOpen) {
+                badge.innerText = "Aberta"; badge.className = "status-badge open";
+                btn.innerText = "ENCERRAR OPERAÇÃO"; btn.style.background = "var(--danger)";
+                btnPedido.disabled = false;
+            } else {
+                badge.innerText = "Fechada"; badge.className = "status-badge closed";
+                btn.innerText = "ABRIR OPERAÇÃO"; btn.style.background = "var(--primary)";
+                btnPedido.disabled = true;
+            }
+        }
+
+        function toggleShift() {
+            if (db.shiftOpen) {
+                showCustomConfirm("Deseja realmente ENCERRAR a operação? A tela do Kanban será limpa para o próximo dia (Os dados irão para o relatório).", () => {
+                    db.shiftOpen = false;
+                    db.orders.forEach(o => { if (!o.archived) o.archived = true; });
+                    saveDb(); updateShiftUI(); renderKanban();
+                });
+            } else {
+                db.shiftOpen = true; saveDb(); updateShiftUI(); renderKanban();
+                showCustomAlert("Operação Aberta! Boas vendas.", "Caixa Aberto");
+            }
+        }
+
+        // --- CONFIGURAÇÕES ADMINISTRATIVAS ---
+        const ALL_PERMS = [
+            { id: 'kanban-view', label: 'Kanban (Frente de Caixa)' }, { id: 'menu-view', label: 'Gestão de Cardápio' },
+            { id: 'tables-view', label: 'Gestão de Mesas' }, { id: 'payments-view', label: 'Métodos de Pagamento' },
+            { id: 'reports-view', label: 'Relatórios Financeiros' }, { id: 'settings-view', label: 'Configurações (Admin)' }
+        ];
+
+        function renderAdminDashboard() {
+            const area = document.getElementById('admin-list-area'); area.innerHTML = '';
+            if (activeAdminTab === 'profiles') {
+                db.profiles.forEach(p => {
+                    area.innerHTML += `<div class="menu-item-card"><div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">${p.perms.length} permissões</span></div><div class="item-actions"><button onclick="openAdminForm('profile', ${p.id})">Editar</button>${p.id !== 1 ? `<button class="btn-delete" onclick="deleteProfile(${p.id})">Excluir</button>` : ''}</div></div>`;
+                });
+            } else {
+                db.users.forEach(u => {
+                    let profName = (db.profiles.find(x => x.id == u.profileId) || {}).name || 'Desconhecido';
+                    area.innerHTML += `<div class="menu-item-card"><div class="item-info"><span class="item-title">${u.login} <span style="font-size:0.8em; color:var(--primary);">(${profName})</span></span><span class="item-subtitle">Senha visível: <strong>${u.pass}</strong></span></div><div class="item-actions"><button onclick="openAdminForm('user', ${u.id})">Editar</button>${u.id !== 1 ? `<button class="btn-delete" onclick="deleteUser(${u.id})">Excluir</button>` : ''}</div></div>`;
+                });
+            }
+        }
+
+        function openAdminForm(type = activeAdminTab.slice(0,-1), id = null) {
+            const modal = document.getElementById('mini-modal'); const body = document.getElementById('mini-modal-body'); const footer = document.getElementById('mini-modal-footer');
+            if (type === 'profile') {
+                let p = id ? db.profiles.find(x => x.id == id) : null; document.getElementById('mini-modal-title').innerText = p ? 'Editar Perfil' : 'Novo Perfil';
+                let checks = ALL_PERMS.map(perm => `<div class="checkbox-item"><input type="checkbox" id="chk-perm-${perm.id}" value="${perm.id}" ${p && p.perms.includes(perm.id) ? 'checked' : ''}><label for="chk-perm-${perm.id}">${perm.label}</label></div>`).join('');
+                body.innerHTML = `<div class="form-group"><label>Nome do Perfil</label><input type="text" id="adm-p-name" value="${p ? p.name : ''}"></div><div class="form-group"><label>Telas Permitidas</label><div class="checkbox-group">${checks}</div></div>`;
+                footer.innerHTML = `<button onclick="closeMiniModal()" style="padding:10px; background:var(--surface); color:white; border:1px solid var(--border);">Cancelar</button> <button class="btn-success" onclick="saveAdminProfile(${id})">Salvar</button>`;
+            } else if (type === 'user') {
+                let u = id ? db.users.find(x => x.id == id) : null; document.getElementById('mini-modal-title').innerText = u ? 'Editar Usuário' : 'Novo Usuário';
+                let profOpts = db.profiles.map(prof => `<option value="${prof.id}" ${u && u.profileId == prof.id ? 'selected' : ''}>${prof.name}</option>`).join('');
+                body.innerHTML = `<div class="form-group"><label>Login</label><input type="text" id="adm-u-login" value="${u ? u.login : ''}"></div><div class="form-group"><label>Senha</label><input type="text" id="adm-u-pass" value="${u ? u.pass : ''}"></div><div class="form-group"><label>Perfil de Acesso</label><select id="adm-u-prof">${profOpts}</select></div>`;
+                footer.innerHTML = `<button onclick="closeMiniModal()" style="padding:10px; background:var(--surface); color:white; border:1px solid var(--border);">Cancelar</button> <button class="btn-success" onclick="saveAdminUser(${id})">Salvar</button>`;
+            }
+            modal.style.display = 'block';
+        }
+
+        function saveAdminProfile(id) {
+            let name = document.getElementById('adm-p-name').value.trim(); if(!name) return showCustomAlert("Nome inválido.");
+            let checkedPerms = []; ALL_PERMS.forEach(perm => { if(document.getElementById(`chk-perm-${perm.id}`).checked) checkedPerms.push(perm.id); });
+            if (id) { let p = db.profiles.find(x => x.id == id); if(p) { p.name = name; p.perms = checkedPerms; } } 
+            else { db.profiles.push({ id: Date.now(), name, perms: checkedPerms }); }
+            saveDb(); closeMiniModal(); renderAdminDashboard(); buildSidebar();
+        }
+
+        function saveAdminUser(id) {
+            let login = document.getElementById('adm-u-login').value.trim(); let pass = document.getElementById('adm-u-pass').value.trim(); let profileId = parseInt(document.getElementById('adm-u-prof').value);
+            if(!login || !pass) return showCustomAlert("Preencha login e senha.");
+            if (id) { let u = db.users.find(x => x.id == id); if(u) { u.login = login; u.pass = pass; u.profileId = profileId; } } 
+            else { if(db.users.find(x => x.login === login)) return showCustomAlert("Login já existe!"); db.users.push({ id: Date.now(), login, pass, profileId, name: '', dob: '', email: '', phone: '', role: '', photo: '' }); }
+            saveDb(); closeMiniModal(); renderAdminDashboard();
+        }
+
+        function deleteProfile(id) {
+            if(id === 1) return showCustomAlert("O perfil master não pode ser apagado.");
+            if(db.users.some(u => u.profileId == id)) return showCustomAlert("Existem usuários usando este perfil. Mude-os antes de apagar.");
+            showCustomConfirm("Deseja apagar este perfil?", () => { db.profiles = db.profiles.filter(p => p.id != id); saveDb(); renderAdminDashboard(); });
+        }
+        function deleteUser(id) {
+            if(id === 1) return showCustomAlert("O usuário mestre não pode ser apagado.");
+            showCustomConfirm("Deseja apagar este usuário?", () => { db.users = db.users.filter(u => u.id != id); saveDb(); renderAdminDashboard(); });
+        }
+
+        // --- GESTÃO DE MESAS E PAGAMENTOS ---
+        function renderTablesDashboard() {
+            const area = document.getElementById('tables-list-area'); area.innerHTML = '';
+            db.tables.forEach((t, index) => { area.innerHTML += `<div class="menu-item-card"><div class="item-info"><span class="item-title">${t}</span></div><div class="item-actions"><button onclick="openTableForm(${index})">Editar</button><button class="btn-delete" onclick="deleteTable(${index})">Excluir</button></div></div>`; });
+        }
+        function openTableForm(index = -1) {
+            let oldName = index > -1 ? db.tables[index] : '';
+            showCustomPrompt(index > -1 ? "Editar Mesa:" : "Nova Mesa:", oldName, (newName) => {
+                if (newName && newName.trim() !== '') {
+                    if (index > -1) db.tables[index] = newName.trim(); else { if (db.tables.includes(newName.trim())) return showCustomAlert("Já existe!"); db.tables.push(newName.trim()); }
+                    saveDb(); renderTablesDashboard();
+                }
+            });
+        }
+        function deleteTable(index) { showCustomConfirm(`Deseja excluir a mesa "${db.tables[index]}"?`, () => { db.tables.splice(index, 1); saveDb(); renderTablesDashboard(); }); }
+
+        function renderPaymentsDashboard() {
+            const area = document.getElementById('payments-list-area'); area.innerHTML = '';
+            db.paymentMethods.forEach((p, index) => { area.innerHTML += `<div class="menu-item-card"><div class="item-info"><span class="item-title">${p}</span></div><div class="item-actions"><button onclick="openPaymentForm(${index})">Editar</button><button class="btn-delete" onclick="deletePayment(${index})">Excluir</button></div></div>`; });
+        }
+        function openPaymentForm(index = -1) {
+            let oldName = index > -1 ? db.paymentMethods[index] : '';
+            showCustomPrompt(index > -1 ? "Editar Pagamento:" : "Novo Pagamento:", oldName, (newName) => {
+                if (newName && newName.trim() !== '') {
+                    if (index > -1) db.paymentMethods[index] = newName.trim(); else { if (db.paymentMethods.includes(newName.trim())) return showCustomAlert("Já existe!"); db.paymentMethods.push(newName.trim()); }
+                    saveDb(); renderPaymentsDashboard();
+                }
+            });
+        }
+        function deletePayment(index) { showCustomConfirm(`Deseja excluir o método "${db.paymentMethods[index]}"?`, () => { db.paymentMethods.splice(index, 1); saveDb(); renderPaymentsDashboard(); }); }
+
+        function openTableSelection() {
+            const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = 'Selecione a Mesa / Local';
+            let html = '<div class="grid-selection">'; db.tables.forEach(t => html += `<button class="grid-selection-btn" onclick="selectPdvTable('${t}')">${t}</button>`); html += '</div>';
+            document.getElementById('mini-modal-body').innerHTML = html;
+            document.getElementById('mini-modal-footer').innerHTML = `<button onclick="closeMiniModal()" style="padding:10px 15px; border-radius:var(--radius); background:var(--surface); color:var(--text); border:1px solid var(--border); cursor:pointer;">Cancelar</button>`;
+            modal.style.display = 'block';
+        }
+        function selectPdvTable(table) { document.getElementById('pdv-table').value = table; document.getElementById('btn-pdv-table').firstElementChild.innerText = table; closeMiniModal(); }
+
+        function openPaymentSelection() {
+            const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = 'Selecione o Pagamento';
+            let html = '<div class="grid-selection">'; db.paymentMethods.forEach(p => html += `<button class="grid-selection-btn" onclick="selectPdvPayment('${p}')">${p}</button>`); html += '</div>';
+            document.getElementById('mini-modal-body').innerHTML = html;
+            document.getElementById('mini-modal-footer').innerHTML = `<button onclick="closeMiniModal()" style="padding:10px 15px; border-radius:var(--radius); background:var(--surface); color:var(--text); border:1px solid var(--border); cursor:pointer;">Cancelar</button>`;
+            modal.style.display = 'block';
+        }
+        function selectPdvPayment(payment) { document.getElementById('pdv-payment').value = payment; document.getElementById('btn-pdv-payment').firstElementChild.innerText = payment; closeMiniModal(); }
+
+        function formatCurrencyMask(input) { let value = input.value.replace(/\D/g, ''); if (value === '') { input.value = ''; return; } value = (parseInt(value, 10) / 100).toFixed(2); input.value = value.replace('.', ','); }
+
+        // --- GESTÃO DE CARDÁPIO (INCLUI MODIFICADORES COM TIPOS) ---
+        function renderMenuDashboard() {
+            const area = document.getElementById('menu-content-area'); area.innerHTML = '';
+            
+            if (activeMenuTab === 'categories') {
+                db.categories.forEach((cat, index) => {
+                    let count = db.products.filter(p => (p.categories || []).includes(cat)).length;
+                    area.innerHTML += `<div class="menu-item-card" onclick="viewCategoryDetails('${cat}')"><div class="item-info"><span class="item-title">${cat}</span><span class="item-subtitle">${count} produto(s)</span></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openCategoryForm('${cat}', ${index})">Editar</button><button onclick="duplicateCategory('${cat}')">Duplicar</button><button class="btn-delete" onclick="deleteCategory('${cat}')">Excluir</button></div></div>`;
+                });
+            } else if (activeMenuTab === 'products') {
+                db.products.forEach(p => {
+                    let catsLabel = (p.categories || []).join(', ') || 'Nenhuma';
+                    let thumb = p.image ? `<img src="${p.image}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; margin-right:15px; background:var(--bg);" onerror="this.style.display='none'">` : `<div style="width:45px; height:45px; border-radius:6px; margin-right:15px; background:var(--bg); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6em; color:#555;">S/ img</div>`;
+                    area.innerHTML += `<div class="menu-item-card" onclick="viewProductDetails(${p.id})"><div style="display:flex; align-items:center;">${thumb}<div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">R$ ${p.price.toFixed(2)}</span></div></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openProductForm(${p.id})">Editar</button><button onclick="duplicateProduct(${p.id})">Duplicar</button><button class="btn-delete" onclick="deleteProduct(${p.id})">Excluir</button></div></div>`;
+                });
+            } else if (activeMenuTab === 'modifiers') {
+                if(!db.modifiers) db.modifiers = [];
+                db.modifiers.forEach((m, index) => {
+                    let valInfo = m.price > 0 ? `+ R$ ${m.price.toFixed(2)}` : 'Grátis';
+                    let typeBadge = m.type === 'exclusion' ? '<span style="color:var(--danger); font-size:0.8em; margin-left:10px;">[Exclusão]</span>' : '<span style="color:var(--primary); font-size:0.8em; margin-left:10px;">[Adicional]</span>';
+                    
+                    area.innerHTML += `<div class="menu-item-card"><div class="item-info"><span class="item-title">${m.name} ${typeBadge}</span><span class="item-subtitle" style="color:var(--text);">${valInfo}</span></div><div class="item-actions"><button onclick="openModifierForm(${m.id})">Editar</button><button class="btn-delete" onclick="deleteModifier(${m.id})">Excluir</button></div></div>`;
+                });
+            }
+        }
+        
+        function openCategoryForm(oldName = '', index = -1) {
+            const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = oldName ? 'Editar Categoria' : 'Criar Categoria';
+            document.getElementById('mini-modal-body').innerHTML = `<div class="form-group"><label>Nome</label><input type="text" id="modal-cat-name" value="${oldName}"></div>`;
+            document.getElementById('mini-modal-footer').innerHTML = `<button class="btn-success" onclick="saveCategory('${oldName}', ${index})">Salvar</button>`;
+            modal.style.display = 'block';
+        }
+        function saveCategory(oldName, index) {
+            let newName = document.getElementById('modal-cat-name').value.trim(); if(!newName) return showCustomAlert("Nome inválido");
+            if(index > -1) { db.categories[index] = newName; db.products.forEach(p => { if(p.categories) p.categories = p.categories.map(c => c === oldName ? newName : c); }); } 
+            else { if(db.categories.includes(newName)) return showCustomAlert("Categoria já existe"); db.categories.push(newName); }
+            saveDb(); closeMiniModal(); renderMenuDashboard();
+        }
+        function deleteCategory(catName) { showCustomConfirm(`Excluir "${catName}"?`, () => { db.categories = db.categories.filter(c => c !== catName); db.products.forEach(p => { if(p.categories) p.categories = p.categories.filter(c => c !== catName); }); saveDb(); renderMenuDashboard(); }); }
+        function duplicateCategory(catName) { let newName = catName + " (Cópia)"; db.categories.push(newName); db.products.forEach(p => { if((p.categories||[]).includes(catName)) db.products.push({ id: Date.now()+Math.random(), name: p.name+" (Cópia)", price: p.price, image: p.image||'', categories: [newName]}); }); saveDb(); renderMenuDashboard(); }
+        function viewCategoryDetails(catName) {
+            const modal = document.getElementById('mini-modal'); let listHtml = db.products.filter(p => (p.categories || []).includes(catName)).map(p => `<li>${p.name} (R$ ${p.price.toFixed(2)})</li>`).join('');
+            document.getElementById('mini-modal-title').innerText = `Categoria: ${catName}`; document.getElementById('mini-modal-body').innerHTML = `<ul>${listHtml}</ul>`;
+            document.getElementById('mini-modal-footer').innerHTML = `<button onclick="closeMiniModal()">Fechar</button>`; modal.style.display = 'block';
+        }
+
+        function openProductForm(productId = null) {
+            if (db.categories.length === 0) return showCustomAlert("Crie uma categoria primeiro.");
+            const modal = document.getElementById('mini-modal'); let p = productId ? db.products.find(x => x.id === productId) : null; let currentCats = p ? (p.categories || []) : [];
+            let checkboxesHtml = db.categories.map(c => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="cat-${c}" value="${c}" ${currentCats.includes(c) ? 'checked' : ''}>
+                    <label for="cat-${c}">${c}</label>
+                </div>`).join('');
+            
+            document.getElementById('mini-modal-title').innerText = p ? 'Editar Produto' : 'Criar Produto';
+            document.getElementById('mini-modal-body').innerHTML = `
+                <div class="form-group"><label>Nome</label><input type="text" id="modal-p-name" value="${p ? p.name : ''}"></div>
+                <div class="form-group"><label>Preço (R$)</label><input type="text" id="modal-p-price" oninput="formatCurrencyMask(this)" value="${p ? p.price.toFixed(2).replace('.', ',') : ''}"></div>
+                <div class="form-group"><label>URL da Imagem</label><input type="text" id="modal-p-image" value="${p && p.image ? p.image : ''}"></div>
+                <div class="form-group"><label>Categorias</label><div class="checkbox-group">${checkboxesHtml}</div></div>
+            `;
+            document.getElementById('mini-modal-footer').innerHTML = `<button class="btn-success" onclick="saveProduct(${productId})">Salvar</button>`;
+            modal.style.display = 'block';
+        }
+        function saveProduct(productId) {
+            let name = document.getElementById('modal-p-name').value.trim(); let price = parseFloat(document.getElementById('modal-p-price').value.replace(',', '.')); let image = document.getElementById('modal-p-image').value.trim(); let checkedCats = [];
+            db.categories.forEach(c => { if(document.getElementById(`cat-${c}`).checked) checkedCats.push(c); });
+            if(!name || isNaN(price) || checkedCats.length===0) return showCustomAlert("Preencha corretamente.");
+            if(productId) { let p = db.products.find(x => x.id === productId); if(p) { p.name = name; p.price = price; p.image = image; p.categories = checkedCats; } } 
+            else { db.products.push({ id: Date.now(), name, price, image, categories: checkedCats }); }
+            saveDb(); closeMiniModal(); renderMenuDashboard();
+        }
+        function deleteProduct(id) { showCustomConfirm("Excluir produto?", () => { db.products = db.products.filter(p => p.id !== id); saveDb(); renderMenuDashboard(); }); }
+        function duplicateProduct(id) { let p = db.products.find(x => x.id === id); if(p) { db.products.push({ id: Date.now(), name: p.name+" (Cópia)", price: p.price, image: p.image||'', categories: [...(p.categories||[])] }); saveDb(); renderMenuDashboard(); } }
+        function viewProductDetails(id) {
+            let p = db.products.find(x => x.id === id); if(!p) return;
+            const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = `Produto: ${p.name}`;
+            document.getElementById('mini-modal-body').innerHTML = `<div>Valor: R$ ${p.price.toFixed(2)}</div><div>Cats: ${(p.categories||[]).join(', ')}</div>`;
+            document.getElementById('mini-modal-footer').innerHTML = `<button onclick="closeMiniModal()">Fechar</button>`; modal.style.display = 'block';
+        }
+
+        function openModifierForm(id = null) {
+            const modal = document.getElementById('mini-modal'); 
+            let m = id ? db.modifiers.find(x => x.id === id) : null;
+            document.getElementById('mini-modal-title').innerText = m ? 'Editar Modificador' : 'Criar Modificador';
+            
+            document.getElementById('mini-modal-body').innerHTML = `
+                <div class="form-group">
+                    <label>Opção (Ex: Sem Cebola, Borda Cheddar)</label>
+                    <input type="text" id="modal-m-name" value="${m ? m.name : ''}">
+                </div>
+                <div class="form-group">
+                    <label>Valor Adicional (R$ 0,00 se grátis)</label>
+                    <input type="text" id="modal-m-price" oninput="formatCurrencyMask(this)" value="${m ? m.price.toFixed(2).replace('.', ',') : '0,00'}">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Modificador</label>
+                    <select id="modal-m-type">
+                        <option value="addon" ${m && m.type === 'addon' ? 'selected' : (!m || !m.type ? 'selected' : '')}>Adicional (+ valor)</option>
+                        <option value="exclusion" ${m && m.type === 'exclusion' ? 'selected' : ''}>Exclusão / Retirada</option>
+                    </select>
+                </div>
+            `;
+            document.getElementById('mini-modal-footer').innerHTML = `
+                <button onclick="closeMiniModal()" style="padding:10px 20px; background:var(--surface); color:white; border:1px solid var(--border);">Cancelar</button>
+                <button class="btn-success" style="padding:10px 20px;" onclick="saveModifier(${id})">Salvar</button>
+            `;
+            modal.style.display = 'block';
+        }
+
+        function saveModifier(id) {
+            let name = document.getElementById('modal-m-name').value.trim(); 
+            let price = parseFloat(document.getElementById('modal-m-price').value.replace(',', '.')) || 0;
+            let type = document.getElementById('modal-m-type').value;
+            
+            if(!name) return showCustomAlert("Nome inválido");
+            if(id) { 
+                let m = db.modifiers.find(x => x.id === id); 
+                if(m) { m.name = name; m.price = price; m.type = type; } 
+            } else { 
+                db.modifiers.push({ id: Date.now(), name, price, type }); 
+            }
+            saveDb(); closeMiniModal(); renderMenuDashboard();
+        }
+        function deleteModifier(id) { showCustomConfirm("Excluir modificador?", () => { db.modifiers = db.modifiers.filter(m => m.id !== id); saveDb(); renderMenuDashboard(); }); }
+
+        // --- IMPRESSÃO CONFIG ---
+        function loadPrintConfig() {
+            let cfg = db.printConfig || { width: 80, fontSize: 12, fontFamily: 'monospace', bold: false };
+            document.getElementById('cfg-print-width').value = cfg.width;
+            document.getElementById('cfg-print-size').value = cfg.fontSize;
+            document.getElementById('cfg-print-font').value = cfg.fontFamily;
+            document.getElementById('cfg-print-bold').checked = cfg.bold;
+            updatePrintPreview();
+        }
+
+        function updatePrintPreview() {
+            let width = document.getElementById('cfg-print-width').value || 80;
+            let size = document.getElementById('cfg-print-size').value || 12;
+            let font = document.getElementById('cfg-print-font').value || 'monospace';
+            let isBold = document.getElementById('cfg-print-bold').checked;
+
+            let preview = document.getElementById('print-preview-container');
+            preview.style.width = width + 'mm';
+            preview.style.fontSize = size + 'px';
+            preview.style.fontFamily = font;
+            preview.style.fontWeight = isBold ? 'bold' : 'normal';
+
+            preview.innerHTML = `
+                <div style="text-align:center; font-weight:bold; font-size:1.2em;">PEDIDO #1234</div>
+                <div style="text-align:center; font-size:0.9em;">15/06/2026 20:30:00</div>
+                <hr style="border:1px dashed black; margin: 8px 0;">
+                <div style="font-size:0.95em;"><strong>Mesa:</strong> Mesa 01</div>
+                <div style="font-size:0.95em;"><strong>Cliente:</strong> Vítor Sontak</div>
+                <div style="font-size:0.95em;"><strong>Pagamento:</strong> Pix</div>
+                <hr style="border:1px dashed black; margin: 8px 0;">
+                <div style="font-weight:bold; font-size:1em;">ITENS:</div>
+                <div style="margin-top: 5px; font-size:1em;"><strong>- Pizza de Calabresa</strong> (R$ 55.00)</div>
+                <div style="padding-left:15px; font-size:0.85em;">+ Borda Recheada</div>
+                <div style="padding-left:15px; font-size:0.85em;">- Sem cebola</div>
+                <hr style="border:1px dashed black; margin: 8px 0;">
+                <div style="text-align:right; font-weight:bold; font-size:1.1em;">TOTAL: R$ 55.00</div>
+            `;
+        }
+
+        function savePrintConfig() {
+            db.printConfig = {
+                width: parseInt(document.getElementById('cfg-print-width').value) || 80,
+                fontSize: parseInt(document.getElementById('cfg-print-size').value) || 12,
+                fontFamily: document.getElementById('cfg-print-font').value,
+                bold: document.getElementById('cfg-print-bold').checked
+            };
+            saveDb();
+            showCustomAlert("Configurações de impressão salvas com sucesso!", "Sucesso");
+        }
+
+        function printTicket(order) {
+            const printSec = document.getElementById('print-section'); 
+            printSec.style.display = 'block';
+            
+            let cfg = db.printConfig || { width: 80, fontSize: 12, fontFamily: 'monospace', bold: false };
+            
+            printSec.style.width = cfg.width + 'mm';
+            printSec.style.fontSize = cfg.fontSize + 'px';
+            printSec.style.fontFamily = cfg.fontFamily;
+            printSec.style.fontWeight = cfg.bold ? 'bold' : 'normal';
+
+            let itemsHtml = order.items.map(i => {
+                let line = `<div style="margin-top: 5px; font-size:1em;"><strong>- ${i.name}</strong> (R$ ${i.price.toFixed(2)})</div>`;
+                if (i.modifiers && i.modifiers.length > 0) {
+                    i.modifiers.forEach(m => {
+                        let prefix = m.type === 'exclusion' ? '-' : '+';
+                        line += `<div style="padding-left:15px; font-size:0.85em;">${prefix} ${m.name}</div>`;
+                    });
+                }
+                if (i.obs) line += `<div style="padding-left:15px; font-size:0.85em; font-style:italic;">Obs: ${i.obs}</div>`;
+                return line;
+            }).join('');
+            
+            printSec.innerHTML = `
+                <div style="text-align:center; font-weight:bold; font-size:1.2em;">PEDIDO #${order.id.toString().slice(-4)}</div>
+                <div style="text-align:center; font-size:0.9em;">${new Date(order.date).toLocaleString('pt-BR')}</div>
+                <hr style="border:1px dashed black; margin: 8px 0;">
+                <div style="font-size:0.95em;"><strong>Mesa:</strong> ${order.table}</div>
+                <div style="font-size:0.95em;"><strong>Cliente:</strong> ${order.client}</div>
+                <div style="font-size:0.95em;"><strong>Pagamento:</strong> ${order.payment}</div>
+                <hr style="border:1px dashed black; margin: 8px 0;">
+                <div style="font-weight:bold; font-size:1em;">ITENS:</div>
+                ${itemsHtml}
+                <hr style="border:1px dashed black; margin: 8px 0;">
+                <div style="text-align:right; font-weight:bold; font-size:1.1em;">TOTAL: R$ ${order.total.toFixed(2)}</div>
+                <br><br><br>
+            `;
+            window.print(); 
+            printSec.style.display = 'none'; 
+            printSec.innerHTML = '';
+        }
+
+
+        // --- PDV E CARRINHO COM NOVA TELA DE MODIFICADORES NA DIREITA ---
+        function openOrderModal(orderId = null) {
+            if (!db.shiftOpen && !orderId) { showCustomAlert("OPERAÇÃO FECHADA. Abra o caixa primeiro para realizar pedidos."); return; }
+            
+            cancelModifierSelection();
+            
+            document.getElementById('order-modal').style.display = 'block'; currentSearchTerm = ''; document.getElementById('pdv-search').value = ''; renderPdvCategories();
+            const btnFinalize = document.getElementById('btn-finalize-order'); const modalTitle = document.getElementById('order-modal-title');
+            if (orderId) {
+                editingOrderId = orderId; let order = db.orders.find(o => o.id === orderId);
+                modalTitle.innerText = `Editar Pedido #${order.id.toString().slice(-4)}`;
+                document.getElementById('pdv-client').value = order.client === 'Não Informado' ? '' : order.client;
+                document.getElementById('pdv-table').value = order.table || ''; document.getElementById('btn-pdv-table').firstElementChild.innerText = order.table || 'Selecionar Mesa';
+                document.getElementById('pdv-payment').value = order.payment || ''; document.getElementById('btn-pdv-payment').firstElementChild.innerText = order.payment || 'Selecionar Pagamento';
+                document.getElementById('pdv-cpf').value = order.cpf || '';
+                currentCart = JSON.parse(JSON.stringify(order.items)); btnFinalize.innerText = "SALVAR ALTERAÇÕES";
+            } else {
+                editingOrderId = null; currentCart = []; modalTitle.innerText = "Novo Pedido";
+                document.getElementById('pdv-client').value = ''; document.getElementById('pdv-table').value = ''; document.getElementById('btn-pdv-table').firstElementChild.innerText = 'Selecionar Mesa';
+                document.getElementById('pdv-payment').value = ''; document.getElementById('btn-pdv-payment').firstElementChild.innerText = 'Selecionar Pagamento';
+                document.getElementById('pdv-cpf').value = ''; btnFinalize.innerText = "FINALIZAR PEDIDO";
+            }
+            renderCart();
+        }
+
+        function closeOrderModal() { document.getElementById('order-modal').style.display = 'none'; editingOrderId = null; }
+        function searchPdvProducts(term) { currentSearchTerm = term.toLowerCase(); filterPdvProducts(currentCategoryFilter); }
+        function renderPdvCategories() {
+            const div = document.getElementById('pdv-categories'); div.innerHTML = '<button onclick="filterPdvProducts(\'\')">Todos</button>';
+            db.categories.forEach(c => div.innerHTML += `<button onclick="filterPdvProducts('${c}')">${c}</button>`); filterPdvProducts('');
+        }
+        
+        function filterPdvProducts(cat) {
+            currentCategoryFilter = cat; const div = document.getElementById('pdv-products'); div.innerHTML = '';
+            let prods = db.products;
+            if (cat !== '') prods = prods.filter(p => (p.categories || []).includes(cat));
+            if (currentSearchTerm !== '') prods = prods.filter(p => p.name.toLowerCase().includes(currentSearchTerm));
+            prods.forEach(p => {
+                let img = p.image ? `<img src="${p.image}" onerror="this.style.display='none';">` : `<div class="no-image">S/ Imagem</div>`;
+                div.innerHTML += `<div class="product-card"><div class="product-main-click" onclick="addToCart(${p.id})">${img}<div style="flex-grow:1; display:flex; flex-direction:column; justify-content:flex-end;"><div class="product-card-title">${p.name}</div><div class="product-card-price">R$ ${p.price.toFixed(2)}</div></div></div><div class="modifier-btn" title="Adicionar Observação/Modificador" onclick="openModifierSelection(${p.id}, event)">⚙️</div></div>`;
+            });
+        }
+
+        function addToCart(id) {
+            let p = db.products.find(x => x.id === id);
+            if(p) { currentCart.push({...p, cartId: Date.now()+Math.random(), completed: false, modifiers: [], obs: '', basePrice: p.price}); renderCart(); }
+        }
+
+        // --- LÓGICA DO NOVO PAINEL DIREITO DIVIDIDO DE MODIFICADORES ---
+        function openModifierSelection(productId, event) {
+            event.stopPropagation(); 
+            let p = db.products.find(x => x.id === productId); 
+            if(!p) return;
+            
+            currentModProductId = p.id;
+            
+            document.getElementById('mod-panel-title').innerText = `Personalizar: ${p.name}`;
+            document.getElementById('mod-panel-obs').value = '';
+            
+            let gridAddHtml = '';
+            let gridExcHtml = '';
+            
+            if (db.modifiers && db.modifiers.length > 0) {
+                let addons = db.modifiers.filter(m => m.type !== 'exclusion');
+                let exclusions = db.modifiers.filter(m => m.type === 'exclusion');
+
+                addons.forEach(m => {
+                    let priceLabel = m.price > 0 ? `<span style="color:var(--primary); font-size:0.85em; display:block; margin-top:5px;">+ R$ ${m.price.toFixed(2)}</span>` : '';
+                    gridAddHtml += `<button class="grid-selection-btn modifier-grid-btn" data-id="${m.id}" onclick="this.classList.toggle('selected')" style="flex-direction: column; padding: 10px;"><span>${m.name}</span>${priceLabel}</button>`;
+                });
+
+                exclusions.forEach(m => {
+                    gridExcHtml += `<button class="grid-selection-btn modifier-grid-btn" data-id="${m.id}" onclick="this.classList.toggle('selected')" style="flex-direction: column; padding: 10px; border-color:var(--danger);"><span>${m.name}</span></button>`;
+                });
+            }
+            
+            document.getElementById('mod-panel-grid-add').innerHTML = gridAddHtml || '<div style="color:#888; font-style:italic; grid-column: 1 / -1; font-size:0.9em;">Nenhum adicional cadastrado.</div>';
+            document.getElementById('mod-panel-grid-exc').innerHTML = gridExcHtml || '<div style="color:#888; font-style:italic; grid-column: 1 / -1; font-size:0.9em;">Nenhuma exclusão cadastrada.</div>';
+            
+            document.getElementById('pdv-catalog-panel').style.display = 'none';
+            document.getElementById('pdv-modifier-panel').style.display = 'flex';
+        }
+
+        function cancelModifierSelection() {
+            currentModProductId = null;
+            document.getElementById('pdv-modifier-panel').style.display = 'none';
+            document.getElementById('pdv-catalog-panel').style.display = 'flex';
+        }
+
+        function confirmModifiersAndAddPanel() {
+            if(!currentModProductId) return;
+            let p = db.products.find(x => x.id === currentModProductId); 
+            if(!p) return;
+            
+            let selectedMods = []; 
+            let addedPrice = 0;
+            
+            let selectedBtnsAdd = document.querySelectorAll('#mod-panel-grid-add .modifier-grid-btn.selected');
+            let selectedBtnsExc = document.querySelectorAll('#mod-panel-grid-exc .modifier-grid-btn.selected');
+            
+            [...selectedBtnsAdd, ...selectedBtnsExc].forEach(btn => {
+                let mId = parseInt(btn.getAttribute('data-id'));
+                let m = db.modifiers.find(x => x.id === mId);
+                if(m) {
+                    selectedMods.push(m);
+                    addedPrice += m.price;
+                }
+            });
+            
+            let obsText = document.getElementById('mod-panel-obs').value.trim();
+            
+            currentCart.push({ ...p, cartId: Date.now() + Math.random(), completed: false, price: p.price + addedPrice, basePrice: p.price, modifiers: selectedMods, obs: obsText });
+            renderCart(); 
+            cancelModifierSelection(); 
+        }
+
+        function removeFromCart(cartId) { currentCart = currentCart.filter(x => x.cartId !== cartId); renderCart(); }
+        
+        function renderCart() {
+            const div = document.getElementById('cart-items'); div.innerHTML = ''; let total = 0;
+            currentCart.forEach(item => { 
+                total += item.price; let details = '';
+                if (item.modifiers && item.modifiers.length > 0) {
+                    item.modifiers.forEach(m => {
+                        if (m.type === 'exclusion') details += `<div style="font-size:0.85em; color:var(--danger);">- ${m.name}</div>`;
+                        else details += `<div style="font-size:0.85em; color:var(--primary);">+ ${m.name}</div>`;
+                    });
+                }
+                if (item.obs) details += `<div style="font-size:0.85em; color:#aaa; font-style:italic;">Obs: ${item.obs}</div>`;
+                div.innerHTML += `<div class="cart-item"><div style="width: 100%;"><div style="display:flex; justify-content:space-between; margin-bottom: 2px;"><span style="font-weight:bold;">${item.name}</span><span>R$ ${item.price.toFixed(2)} <button onclick="removeFromCart(${item.cartId})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; font-size:1.1em; padding-left:10px;">×</button></span></div>${details}</div></div>`; 
+            });
+            document.getElementById('cart-total').innerText = `Total: R$ ${total.toFixed(2)}`;
+        }
+
+        function finalizeOrder() {
+            if(currentCart.length === 0) return showCustomAlert("Carrinho vazio!");
+            let table = document.getElementById('pdv-table').value; let payment = document.getElementById('pdv-payment').value;
+            if(!table) return showCustomAlert("Selecione a mesa!"); if(!payment) return showCustomAlert("Selecione o pagamento!");
+
+            let targetOrder;
+            if (editingOrderId) {
+                targetOrder = db.orders.find(o => o.id === editingOrderId);
+                if (targetOrder) { targetOrder.client = document.getElementById('pdv-client').value || 'Não Informado'; targetOrder.table = table; targetOrder.payment = payment; targetOrder.cpf = document.getElementById('pdv-cpf').value; targetOrder.total = currentCart.reduce((sum, item) => sum + item.price, 0); targetOrder.items = currentCart; }
+            } else {
+                targetOrder = { id: Date.now(), date: new Date().toISOString(), lastStatusChange: Date.now(), client: document.getElementById('pdv-client').value || 'Não Informado', table, payment, cpf: document.getElementById('pdv-cpf').value, total: currentCart.reduce((sum, item) => sum + item.price, 0), items: currentCart, status: 'preparo', archived: false };
+                db.orders.push(targetOrder);
+            }
+            saveDb(); 
+            
+            closeOrderModal(); 
+            switchViewAndClose('kanban-view');
+            
+            if(document.getElementById('pdv-print').checked) {
+                setTimeout(() => {
+                    printTicket(targetOrder);
+                }, 300);
+            }
+        }
+
+        // Kanban Logic
+        function viewOrderInKanban(orderId) {
+            let order = db.orders.find(o => o.id === orderId); if (!order) return;
+            const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = `Pedido #${order.id.toString().slice(-4)} - ${order.table}`;
+            let itemsHtml = order.items.map(i => {
+                let details = '';
+                if (i.modifiers && i.modifiers.length > 0) {
+                    i.modifiers.forEach(m => {
+                        if (m.type === 'exclusion') details += `<div style="color:var(--danger); font-size:0.85em; margin-top:2px;">- ${m.name}</div>`;
+                        else details += `<div style="color:var(--primary); font-size:0.85em; margin-top:2px;">+ ${m.name}</div>`;
+                    });
+                }
+                if (i.obs) details += `<div style="color:#aaa; font-style:italic; font-size:0.85em; margin-top:2px;">Obs: ${i.obs}</div>`;
+                return `<div class="checkbox-item" style="padding: 8px 0; border-bottom: 1px dashed var(--border); align-items:flex-start;"><input type="checkbox" id="chk-${i.cartId}" ${i.completed ? 'checked' : ''} onchange="toggleOrderItem(${order.id}, ${i.cartId}, this.checked)" style="transform: scale(1.3); margin-right: 12px; margin-top:5px; cursor: pointer;"><div style="flex-grow:1; cursor:pointer; ${i.completed ? 'text-decoration: line-through; opacity: 0.4;' : ''}"><label for="chk-${i.cartId}" style="cursor: pointer; width: 100%; color:var(--text); display:block;">${i.name}</label>${details}</div></div>`}).join('');
+            document.getElementById('mini-modal-body').innerHTML = `<div style="margin-bottom:15px; font-size:0.95em; color:#aaa;">Cliente: <span style="color:var(--text); font-weight:500;">${order.client}</span><br>Pagamento: <span style="color:var(--text); font-weight:500;">${order.payment}</span></div><div style="font-weight:bold; color:var(--primary);">Itens:</div><div style="border:1px solid var(--border); padding:10px; border-radius:var(--radius); background:var(--surface);">${itemsHtml}</div>`;
+            document.getElementById('mini-modal-footer').innerHTML = `<button onclick="closeMiniModal()" style="padding:8px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg); cursor:pointer; color:var(--text);">Fechar</button>`; modal.style.display = 'block';
+        }
+        function toggleOrderItem(orderId, cartId, isChecked) {
+            let order = db.orders.find(o => o.id === orderId);
+            if(order) {
+                let item = order.items.find(i => i.cartId === cartId); if(item) item.completed = isChecked;
+                let allCompleted = order.items.every(i => i.completed);
+                if (allCompleted && order.status === 'preparo') { order.status = 'entregue'; order.lastStatusChange = Date.now(); saveDb(); renderKanban(); closeMiniModal(); return; } 
+                else if (!allCompleted && order.status === 'entregue') { order.status = 'preparo'; order.lastStatusChange = Date.now(); }
+                saveDb(); renderKanban(); if(document.getElementById('mini-modal').style.display === 'block') viewOrderInKanban(orderId);
+            }
+        }
+        function renderKanban() {
+            document.getElementById('col-preparo').innerHTML = '<h3>Em Preparo</h3>'; document.getElementById('col-entregue').innerHTML = '<h3>Entregues</h3>'; document.getElementById('col-cancelado').innerHTML = '<h3>Cancelados</h3>';
+            let liveOrders = db.orders.filter(o => !o.archived);
+            liveOrders.forEach(o => {
+                let card = document.createElement('div'); card.className = 'order-card';
+                let itemsListHtml = o.items.map(i => {
+                    let details = '';
+                    if (i.modifiers && i.modifiers.length > 0) {
+                        let modsNames = i.modifiers.map(m => m.type === 'exclusion' ? `-${m.name}` : `+${m.name}`);
+                        details += ` <span style="color:var(--primary); font-size:0.9em;">(${modsNames.join(', ')})</span>`;
+                    }
+                    if (i.obs) details += ` <span style="color:#888; font-style:italic; font-size:0.9em;">(Obs: ${i.obs})</span>`;
+                    return `<div style="${i.completed ? 'text-decoration:line-through; opacity:0.4;' : ''} margin-bottom:4px; color:#aaa;">• ${i.name}${details}</div>`;
+                }).join('');
+                let startTime = o.lastStatusChange || new Date(o.date).getTime();
+                card.innerHTML = `<div class="order-card-body" onclick="viewOrderInKanban(${o.id})"><div style="display:flex; justify-content:space-between; align-items:flex-start;"><div style="font-weight:bold; font-size:1.05em; color:var(--text); flex-grow:1; margin-right:10px;">${o.table}</div><div class="time-tracker" data-time="${startTime}" style="font-family:monospace; background:var(--bg); padding:2px 6px; border-radius:4px; font-size:0.85em; border:1px solid var(--border); color:#aaa;">00:00</div></div><div style="font-size:0.85em; margin-bottom:10px; color:#aaa; font-style:italic;">${o.client}</div><div style="font-size:0.85em;">${itemsListHtml}</div><div style="margin-top:10px; font-weight:bold; color:var(--primary); font-size:1.1em;">R$ ${o.total.toFixed(2)}</div></div>`;
+                let actionsHtml = `<div class="card-actions" onclick="event.stopPropagation()"><button class="icon-btn" title="Editar Pedido" onclick="openOrderModal(${o.id})">✏️</button>`;
+                if(o.status === 'preparo') { actionsHtml += `<button class="icon-btn" style="color:var(--danger);" onclick="changeStatus(${o.id}, 'cancelado')">❌</button><button class="icon-btn" style="color:var(--danger);" onclick="deleteOrder(${o.id})">🗑️</button><button class="icon-btn" style="color:var(--primary);" onclick="changeStatus(${o.id}, 'entregue')">➔</button></div>`; card.innerHTML += actionsHtml; document.getElementById('col-preparo').appendChild(card); } 
+                else if (o.status === 'entregue') { actionsHtml += `<button class="icon-btn" onclick="changeStatus(${o.id}, 'preparo')">⬅️</button><button class="icon-btn" style="color:var(--danger);" onclick="deleteOrder(${o.id})">🗑️</button></div>`; card.innerHTML += actionsHtml; document.getElementById('col-entregue').appendChild(card); }
+                else { actionsHtml += `<button class="icon-btn" onclick="changeStatus(${o.id}, 'preparo')">⬅️</button><button class="icon-btn" style="color:var(--danger);" onclick="deleteOrder(${o.id})">🗑️</button></div>`; card.innerHTML += actionsHtml; document.getElementById('col-cancelado').appendChild(card); }
+            });
+        }
+        function changeStatus(id, newStatus) {
+            let order = db.orders.find(o => o.id === id);
+            if(order) {
+                order.status = newStatus; order.lastStatusChange = Date.now(); 
+                if(newStatus === 'entregue') order.items.forEach(i => i.completed = true); else if (newStatus === 'preparo') order.items.forEach(i => i.completed = false);
+                saveDb(); renderKanban();
+            }
+        }
+        function deleteOrder(id) { showCustomConfirm("A exclusão removerá dos relatórios! Continuar?", () => { db.orders = db.orders.filter(o => o.id !== id); saveDb(); renderKanban(); if(document.getElementById('reports-view').classList.contains('active')) renderReports(); }); }
+
+        // Relatórios
+        function renderReports() {
+            let filterDate = document.getElementById('report-date').value;
+            let now = new Date(); let sevenDaysAgo = new Date(); sevenDaysAgo.setDate(now.getDate() - 7);
+            let filteredOrders = db.orders.filter(o => {
+                let oDate = new Date(o.date);
+                if (o.status === 'cancelado') return false;
+                if (filterDate) return oDate.toISOString().split('T')[0] === filterDate;
+                else return oDate >= sevenDaysAgo;
+            });
+            const tbody = document.querySelector('#reports-table tbody'); tbody.innerHTML = ''; let total = 0;
+            filteredOrders.forEach(o => {
+                total += o.total;
+                let isArch = o.archived ? '<span style="color:#aaa; font-size:0.8em;">(Fechado)</span>' : '';
+                tbody.innerHTML += `<tr><td style="color:#aaa;">#${o.id.toString().slice(-4)}</td><td style="font-size:0.85em;">${new Date(o.date).toLocaleString('pt-BR')} ${isArch}</td><td style="font-weight:500;">${o.table}</td><td>${o.client}</td><td>${o.payment}</td><td style="color:var(--primary); font-weight:bold;">R$ ${o.total.toFixed(2)}</td></tr>`;
+            });
+            document.getElementById('report-total').innerText = `Total: R$ ${total.toFixed(2)}`;
+        }
+
+        setInterval(() => {
+            document.querySelectorAll('.time-tracker').forEach(el => {
+                let start = parseInt(el.getAttribute('data-time')); if (!start) return;
+                let diff = Math.floor((Date.now() - start) / 1000);
+                let h = Math.floor(diff / 3600); let m = Math.floor((diff % 3600) / 60); let s = diff % 60;
+                let display = ''; if(h > 0) display += h.toString().padStart(2, '0') + ':'; display += m.toString().padStart(2, '0') + ':' + s.toString().padStart(2, '0');
+                el.innerText = display;
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
