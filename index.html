@@ -75,7 +75,7 @@
         .pdv-left { width: 30%; background: var(--surface); padding: 20px; display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
         .pdv-right { width: 70%; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Formulários e Checkboxes */
+        /* Formulários */
         .form-group { margin-bottom: 15px; width: 100%; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #aaa; text-align: left; }
         .form-group input:not([type="checkbox"]), .form-group select, textarea { width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); outline: none; font-family: inherit; resize: vertical; }
@@ -456,7 +456,7 @@
 
     <script>
         // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE (BLINDADA CONTRA FALHA DE REDE)
+        // CONFIGURAÇÃO DO FIREBASE
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDdZ4XRJ8PuNjCIqfTj2vKvLusRg1omwzU",
@@ -467,21 +467,9 @@
             appId: "1:549419694659:web:a37ba934910a9ac24c32f6"
         };
 
-        let cloudDb = null;
-        let docRef = null;
-
-        // Try-Catch para não travar se o Google estiver bloqueado
-        try {
-            if (typeof firebase !== 'undefined') {
-                firebase.initializeApp(firebaseConfig);
-                cloudDb = firebase.firestore();
-                docRef = cloudDb.collection("pdv").doc("lapartigiana");
-            } else {
-                console.warn("Script do Firebase não foi carregado (Sem Internet).");
-            }
-        } catch (e) {
-            console.error("Erro na inicialização do Firebase:", e);
-        }
+        firebase.initializeApp(firebaseConfig);
+        const cloudDb = firebase.firestore();
+        const docRef = cloudDb.collection("pdv").doc("lapartigiana");
 
         let db = {
             categories: ['Pizzas Salgadas', 'Pizzas Doces', 'Bebidas'],
@@ -549,7 +537,7 @@
             window.dialogPromptCallback = null;
         }
 
-        // --- SISTEMA DE INICIALIZAÇÃO BLINDADO ---
+        // --- SISTEMA DE INICIALIZAÇÃO ---
         function finishInit() {
             if (isInitDone) return;
             isInitDone = true;
@@ -564,42 +552,35 @@
             }
         }
 
-        function fallbackOffline() {
-            if (isInitDone) return; 
-            try {
-                let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
-                if (localFallback) { db = localFallback; }
-            } catch(e) { console.error("Erro no LocalStorage", e); }
-            ensureIntegrity();
-            finishInit();
-        }
-
         function initApp() {
-            // TIMEOUT ANTI-TRAVA: Força o modo local se demorar > 3 seg
             setTimeout(() => {
                 if (!isInitDone) {
-                    console.warn("Timeout de nuvem. Forçando modo Local.");
-                    fallbackOffline();
+                    console.warn("Conexão com a nuvem demorando. Iniciando em Modo Offline de Emergência.");
+                    let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
+                    if (localFallback) { db = localFallback; }
+                    ensureIntegrity();
+                    finishInit();
                 }
             }, 3000);
 
-            if (docRef) {
-                docRef.get().then((doc) => {
-                    if (doc.exists) {
-                        db = doc.data();
-                        ensureIntegrity();
-                    } else {
-                        fallbackOffline();
-                        docRef.set(db).catch(e=>{}); 
-                    }
-                    finishInit();
-                }).catch((error) => {
-                    console.error("Modo Offline Ativado pelo Catch.", error);
-                    fallbackOffline();
-                });
-            } else {
-                fallbackOffline();
-            }
+            docRef.get().then((doc) => {
+                if (doc.exists) {
+                    db = doc.data();
+                    ensureIntegrity();
+                } else {
+                    let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
+                    if (localFallback) { db = localFallback; }
+                    ensureIntegrity();
+                    docRef.set(db); 
+                }
+                finishInit();
+            }).catch((error) => {
+                console.error("Modo Offline Ativado pelo Catch.", error);
+                let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
+                if (localFallback) { db = localFallback; }
+                ensureIntegrity();
+                finishInit();
+            });
         }
 
         function ensureIntegrity() {
@@ -626,15 +607,15 @@
                     { id: 1, login: 'vitor.sontak', pass: 'Yasuo010118*', name: 'Vítor Martins Sontak', dob: '', email: '', phone: '', role: 'Sócio/Administrador', photo: '', profileId: 1 }
                 ];
             }
-            try { localStorage.setItem('pdv_db', JSON.stringify(db)); } catch(e){}
+            localStorage.setItem('pdv_db', JSON.stringify(db));
         }
 
         function saveDb() { 
-            try { localStorage.setItem('pdv_db', JSON.stringify(db)); } catch(e){}
-            if (docRef) {
-                docRef.set(db).catch(err => console.error("Falha Nuvem:", err));
-            }
+            localStorage.setItem('pdv_db', JSON.stringify(db)); 
+            docRef.set(db).catch(err => console.error("Falha Nuvem:", err));
         }
+
+        initApp();
 
         // --- SISTEMA DE LOGIN E SESSÃO ---
         function togglePasswordVisibility() {
