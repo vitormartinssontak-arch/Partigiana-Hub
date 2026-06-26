@@ -75,7 +75,7 @@
         .pdv-left { width: 30%; background: var(--surface); padding: 20px; display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
         .pdv-right { width: 70%; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Formulários */
+        /* Formulários e Checkboxes */
         .form-group { margin-bottom: 15px; width: 100%; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #aaa; text-align: left; }
         .form-group input:not([type="checkbox"]), .form-group select, textarea { width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); outline: none; font-family: inherit; resize: vertical; }
@@ -148,7 +148,7 @@
         .profile-pic-container { text-align: center; margin-bottom: 20px; }
         .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: var(--bg); margin-bottom: 10px; display: inline-block; }
         
-        /* Impressão Bobina Customizada */
+        /* Impressão Bobina Customizada (Mantido apenas como fallback visual) */
         @media print {
             body * { visibility: hidden; }
             #print-section, #print-section * { visibility: visible; }
@@ -159,12 +159,39 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/rsvp@3.1.0/dist/rsvp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sha.js@2.4.11/build/sha256.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.2/qz-tray.min.js"></script>
+    
+    <script>
+        // =========================================================================
+        // CAIXA PRETA - CAPTURA DE ERROS FATAIS SILENCIOSOS
+        // Este bloco detecta se a memória corrompeu ou travou e mostra a solução
+        // =========================================================================
+        window.onerror = function(message, source, lineno, colno, error) {
+            let loader = document.getElementById('loader-overlay');
+            if(loader) {
+                loader.innerHTML = `
+                    <h2 style="color: var(--danger);">Falha Crítica no Sistema</h2>
+                    <p style="color: #aaa; text-align:center; max-width:80%; padding:20px;">
+                        <strong>Erro:</strong> ${message}<br>
+                        <strong>Linha:</strong> ${lineno}
+                    </p>
+                    <button style="background:var(--danger); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="localStorage.removeItem('pdv_db'); location.reload();">RESETAR MEMÓRIA E REINICIAR</button>
+                `;
+            }
+        };
+    </script>
 </head>
 <body>
 
     <div id="loader-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <h2 style="color: var(--primary);">Conectando...</h2>
-        <p style="color: #aaa;">Sincronizando dados da operação</p>
+        <p style="color: #aaa; margin-bottom: 10px;">Sincronizando dados da operação</p>
+        <button onclick="forceOfflineMode()" style="margin-top: 20px; background: transparent; border: 1px solid var(--border); color: #aaa; padding: 10px 20px; border-radius: var(--radius); cursor: pointer; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary)'; this.style.color='var(--primary)';" onmouseout="this.style.borderColor='var(--border)'; this.style.color='#aaa';">
+            Forçar Acesso Local (Ignorar Nuvem)
+        </button>
     </div>
 
     <div id="system-dialog" class="modal-overlay" style="z-index: 9999999;">
@@ -456,7 +483,7 @@
 
     <script>
         // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE
+        // CONFIGURAÇÃO DO FIREBASE (BLINDADA CONTRA FALHA DE REDE)
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyDdZ4XRJ8PuNjCIqfTj2vKvLusRg1omwzU",
@@ -467,9 +494,21 @@
             appId: "1:549419694659:web:a37ba934910a9ac24c32f6"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const cloudDb = firebase.firestore();
-        const docRef = cloudDb.collection("pdv").doc("lapartigiana");
+        let cloudDb = null;
+        let docRef = null;
+
+        // Try-Catch para não travar se o Google estiver bloqueado
+        try {
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                cloudDb = firebase.firestore();
+                docRef = cloudDb.collection("pdv").doc("lapartigiana");
+            } else {
+                console.warn("Script do Firebase não foi carregado (Sem Internet).");
+            }
+        } catch (e) {
+            console.error("Erro na inicialização do Firebase:", e);
+        }
 
         let db = {
             categories: ['Pizzas Salgadas', 'Pizzas Doces', 'Bebidas'],
@@ -537,7 +576,7 @@
             window.dialogPromptCallback = null;
         }
 
-        // --- SISTEMA DE INICIALIZAÇÃO ---
+        // --- SISTEMA DE INICIALIZAÇÃO BLINDADO ---
         function finishInit() {
             if (isInitDone) return;
             isInitDone = true;
@@ -552,35 +591,48 @@
             }
         }
 
+        function fallbackOffline() {
+            if (isInitDone) return; 
+            try {
+                let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
+                if (localFallback) { db = localFallback; }
+            } catch(e) { console.error("Erro no LocalStorage", e); }
+            ensureIntegrity();
+            finishInit();
+        }
+
+        function forceOfflineMode() {
+            console.warn("Usuário forçou a entrada local.");
+            fallbackOffline();
+        }
+
         function initApp() {
+            // Se demorar mais de 3 segundos, ou se der erro síncrono antes disso, ele força o modo Local
             setTimeout(() => {
                 if (!isInitDone) {
-                    console.warn("Conexão com a nuvem demorando. Iniciando em Modo Offline de Emergência.");
-                    let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
-                    if (localFallback) { db = localFallback; }
-                    ensureIntegrity();
-                    finishInit();
+                    console.warn("Timeout de nuvem. Forçando modo Local.");
+                    fallbackOffline();
                 }
             }, 3000);
 
-            docRef.get().then((doc) => {
-                if (doc.exists) {
-                    db = doc.data();
-                    ensureIntegrity();
-                } else {
-                    let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
-                    if (localFallback) { db = localFallback; }
-                    ensureIntegrity();
-                    docRef.set(db); 
-                }
-                finishInit();
-            }).catch((error) => {
-                console.error("Modo Offline Ativado pelo Catch.", error);
-                let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
-                if (localFallback) { db = localFallback; }
-                ensureIntegrity();
-                finishInit();
-            });
+            if (docRef) {
+                docRef.get().then((doc) => {
+                    if (doc.exists) {
+                        db = doc.data();
+                        ensureIntegrity();
+                    } else {
+                        fallbackOffline();
+                        docRef.set(db).catch(e=>{}); 
+                    }
+                    finishInit();
+                }).catch((error) => {
+                    console.error("Modo Offline Ativado pelo Catch.", error);
+                    fallbackOffline();
+                });
+            } else {
+                // Se docRef é null (sem Firebase), chama offline imediatamente
+                fallbackOffline();
+            }
         }
 
         function ensureIntegrity() {
@@ -607,15 +659,15 @@
                     { id: 1, login: 'vitor.sontak', pass: 'Yasuo010118*', name: 'Vítor Martins Sontak', dob: '', email: '', phone: '', role: 'Sócio/Administrador', photo: '', profileId: 1 }
                 ];
             }
-            localStorage.setItem('pdv_db', JSON.stringify(db));
+            try { localStorage.setItem('pdv_db', JSON.stringify(db)); } catch(e){}
         }
 
         function saveDb() { 
-            localStorage.setItem('pdv_db', JSON.stringify(db)); 
-            docRef.set(db).catch(err => console.error("Falha Nuvem:", err));
+            try { localStorage.setItem('pdv_db', JSON.stringify(db)); } catch(e){}
+            if (docRef) {
+                docRef.set(db).catch(err => console.error("Falha Nuvem:", err));
+            }
         }
-
-        initApp();
 
         // --- SISTEMA DE LOGIN E SESSÃO ---
         function togglePasswordVisibility() {
@@ -1038,7 +1090,7 @@
         }
         function deleteModifier(id) { showCustomConfirm("Excluir modificador?", () => { db.modifiers = db.modifiers.filter(m => m.id !== id); saveDb(); renderMenuDashboard(); }); }
 
-        // --- IMPRESSÃO CONFIG ---
+        // --- IMPRESSÃO CONFIG (MANTIDA APENAS PARA EDITAR A LARGURA NO BANCO) ---
         function loadPrintConfig() {
             let cfg = db.printConfig || { width: 80, fontSize: 12, fontFamily: 'monospace', bold: false };
             document.getElementById('cfg-print-width').value = cfg.width;
@@ -1061,19 +1113,10 @@
             preview.style.fontWeight = isBold ? 'bold' : 'normal';
 
             preview.innerHTML = `
-                <div style="text-align:center; font-weight:bold; font-size:1.2em;">PEDIDO #1234</div>
-                <div style="text-align:center; font-size:0.9em;">15/06/2026 20:30:00</div>
+                <div style="text-align:center; font-weight:bold; font-size:1.2em;">NOVO MODO RAW QZ TRAY</div>
+                <div style="text-align:center; font-size:0.9em;">(Pré-visualização visual desativada)</div>
                 <hr style="border:1px dashed black; margin: 8px 0;">
-                <div style="font-size:0.95em;"><strong>Mesa:</strong> Mesa 01</div>
-                <div style="font-size:0.95em;"><strong>Cliente:</strong> Vítor Sontak</div>
-                <div style="font-size:0.95em;"><strong>Pagamento:</strong> Pix</div>
-                <hr style="border:1px dashed black; margin: 8px 0;">
-                <div style="font-weight:bold; font-size:1em;">ITENS:</div>
-                <div style="margin-top: 5px; font-size:1em;"><strong>- Pizza de Calabresa</strong> (R$ 55.00)</div>
-                <div style="padding-left:15px; font-size:0.85em;">+ Borda Recheada</div>
-                <div style="padding-left:15px; font-size:0.85em;">- Sem cebola</div>
-                <hr style="border:1px dashed black; margin: 8px 0;">
-                <div style="text-align:right; font-weight:bold; font-size:1.1em;">TOTAL: R$ 55.00</div>
+                <div style="font-size:0.95em;">A impressão agora é gerada com comandos nativos ESC/POS e enviada diretamente para a impressora chamada 'ELGIN i9(USB) (Copiar 1)' via QZ Tray.</div>
             `;
         }
 
@@ -1088,46 +1131,90 @@
             showCustomAlert("Configurações de impressão salvas com sucesso!", "Sucesso");
         }
 
+        // --- NOVO MOTOR DE IMPRESSÃO VIA QZ TRAY (RAW / ESC-POS) ---
         function printTicket(order) {
-            const printSec = document.getElementById('print-section'); 
-            printSec.style.display = 'block';
-            
-            let cfg = db.printConfig || { width: 80, fontSize: 12, fontFamily: 'monospace', bold: false };
-            
-            printSec.style.width = cfg.width + 'mm';
-            printSec.style.fontSize = cfg.fontSize + 'px';
-            printSec.style.fontFamily = cfg.fontFamily;
-            printSec.style.fontWeight = cfg.bold ? 'bold' : 'normal';
+            if (!qz.websocket.isActive()) {
+                qz.websocket.connect().then(function() {
+                    executeQZPrint(order);
+                }).catch(function(err) {
+                    console.error("QZ Connect Error:", err);
+                    showCustomAlert("O QZ Tray não está rodando no computador. Abra o programa perto do relógio do Windows e tente novamente.", "Erro de Conexão");
+                });
+            } else {
+                executeQZPrint(order);
+            }
+        }
 
-            let itemsHtml = order.items.map(i => {
-                let line = `<div style="margin-top: 5px; font-size:1em;"><strong>- ${i.name}</strong> (R$ ${i.price.toFixed(2)})</div>`;
-                if (i.modifiers && i.modifiers.length > 0) {
-                    i.modifiers.forEach(m => {
-                        let prefix = m.type === 'exclusion' ? '-' : '+';
-                        line += `<div style="padding-left:15px; font-size:0.85em;">${prefix} ${m.name}</div>`;
-                    });
-                }
-                if (i.obs) line += `<div style="padding-left:15px; font-size:0.85em; font-style:italic;">Obs: ${i.obs}</div>`;
-                return line;
-            }).join('');
-            
-            printSec.innerHTML = `
-                <div style="text-align:center; font-weight:bold; font-size:1.2em;">PEDIDO #${order.id.toString().slice(-4)}</div>
-                <div style="text-align:center; font-size:0.9em;">${new Date(order.date).toLocaleString('pt-BR')}</div>
-                <hr style="border:1px dashed black; margin: 8px 0;">
-                <div style="font-size:0.95em;"><strong>Mesa:</strong> ${order.table}</div>
-                <div style="font-size:0.95em;"><strong>Cliente:</strong> ${order.client}</div>
-                <div style="font-size:0.95em;"><strong>Pagamento:</strong> ${order.payment}</div>
-                <hr style="border:1px dashed black; margin: 8px 0;">
-                <div style="font-weight:bold; font-size:1em;">ITENS:</div>
-                ${itemsHtml}
-                <hr style="border:1px dashed black; margin: 8px 0;">
-                <div style="text-align:right; font-weight:bold; font-size:1.1em;">TOTAL: R$ ${order.total.toFixed(2)}</div>
-                <br><br><br>
-            `;
-            window.print(); 
-            printSec.style.display = 'none'; 
-            printSec.innerHTML = '';
+        function executeQZPrint(order) {
+            // Procura exatamente pela impressora que você renomeou no Windows
+            qz.printers.find("ELGIN i9(USB) (Copiar 1)").then(function(printer) {
+                var config = qz.configs.create(printer);
+                
+                // Tabela de comandos ESC/POS puros
+                var ESC = '\x1B';
+                var GS = '\x1D';
+                var LF = '\n';
+                var INIT = ESC + '\x40'; 
+                var ALIGN_CENTER = ESC + '\x61' + '\x31'; 
+                var ALIGN_LEFT = ESC + '\x61' + '\x30'; 
+                var ALIGN_RIGHT = ESC + '\x61' + '\x32';
+                var BOLD_ON = ESC + '\x45' + '\x01';
+                var BOLD_OFF = ESC + '\x45' + '\x00';
+                var CUT = GS + '\x56' + '\x41' + '\x00'; // Comando mecânico de corte parcial
+
+                // Checa a configuração do sistema para decidir o tamanho da linha (80mm vs 58mm)
+                var widthChars = (db.printConfig && db.printConfig.width == 58) ? 32 : 48;
+                var divisor = '-'.repeat(widthChars) + LF;
+
+                // Montagem do vetor de impressão (Array)
+                var data = [
+                    INIT,
+                    ALIGN_CENTER,
+                    BOLD_ON, 'PEDIDO #' + order.id.toString().slice(-4) + LF, BOLD_OFF,
+                    new Date(order.date).toLocaleString('pt-BR') + LF,
+                    divisor,
+                    ALIGN_LEFT,
+                    'Mesa: ' + order.table + LF,
+                    'Cliente: ' + order.client + LF,
+                    'Pagamento: ' + order.payment + LF,
+                    ALIGN_CENTER,
+                    divisor,
+                    BOLD_ON, 'ITENS:' + LF, BOLD_OFF,
+                    ALIGN_LEFT
+                ];
+
+                // Loop dos produtos e modificadores
+                order.items.forEach(function(i) {
+                    data.push(BOLD_ON, '- ' + i.name + ' (R$ ' + i.price.toFixed(2) + ')' + LF, BOLD_OFF);
+                    
+                    if (i.modifiers && i.modifiers.length > 0) {
+                        i.modifiers.forEach(function(m) {
+                            var prefix = m.type === 'exclusion' ? '[-] ' : '[+] ';
+                            data.push('  ' + prefix + m.name + LF);
+                        });
+                    }
+                    if (i.obs) {
+                        data.push('  Obs: ' + i.obs + LF);
+                    }
+                });
+
+                // Fechamento e Corte
+                data.push(
+                    ALIGN_CENTER,
+                    divisor,
+                    ALIGN_RIGHT,
+                    BOLD_ON, 'TOTAL: R$ ' + order.total.toFixed(2) + LF, BOLD_OFF,
+                    LF, LF, LF, LF, LF, // Avança a bobina 5 linhas para garantir o corte perfeito
+                    CUT
+                );
+
+                // Envia direto para a placa da impressora
+                return qz.print(config, data);
+
+            }).catch(function(err) {
+                console.error("QZ Print Error:", err);
+                showCustomAlert("Não foi possível imprimir. Verifique se a impressora está instalada no Windows com o nome exato de 'ELGIN i9(USB) (Copiar 1)'.", "Erro na Impressora");
+            });
         }
 
 
