@@ -75,7 +75,7 @@
         .pdv-left { width: 30%; background: var(--surface); padding: 20px; display: flex; flex-direction: column; border-right: 1px solid var(--border); overflow-y: auto; }
         .pdv-right { width: 70%; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* Formulários e Checkboxes */
+        /* Formulários */
         .form-group { margin-bottom: 15px; width: 100%; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #aaa; text-align: left; }
         .form-group input:not([type="checkbox"]), .form-group select, textarea { width: 100%; padding: 10px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); outline: none; font-family: inherit; resize: vertical; }
@@ -157,17 +157,17 @@
         }
     </style>
 
+    <!-- INJEÇÕES DO FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/rsvp@3.1.0/dist/rsvp.min.js"></script>
+    <!-- INJEÇÕES DO QZ TRAY (LIMPO DO RSVP.JS) -->
     <script src="https://cdn.jsdelivr.net/npm/sha.js@2.4.11/build/sha256.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.2/qz-tray.min.js"></script>
     
     <script>
         // =========================================================================
         // CAIXA PRETA - CAPTURA DE ERROS FATAIS SILENCIOSOS
-        // Este bloco detecta se a memória corrompeu ou travou e mostra a solução
         // =========================================================================
         window.onerror = function(message, source, lineno, colno, error) {
             let loader = document.getElementById('loader-overlay');
@@ -178,7 +178,7 @@
                         <strong>Erro:</strong> ${message}<br>
                         <strong>Linha:</strong> ${lineno}
                     </p>
-                    <button style="background:var(--danger); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="localStorage.removeItem('pdv_db'); location.reload();">RESETAR MEMÓRIA E REINICIAR</button>
+                    <button style="background:var(--danger); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold; cursor:pointer;" onclick="localStorage.removeItem('pdv_db'); location.reload();">FORMATAR MEMÓRIA E REINICIAR</button>
                 `;
             }
         };
@@ -186,6 +186,7 @@
 </head>
 <body>
 
+    <!-- OVERLAY DE CARREGAMENTO (COM BOTÃO DE FUGA OFFLINE RESTAURADO) -->
     <div id="loader-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
         <h2 style="color: var(--primary);">Conectando...</h2>
         <p style="color: #aaa; margin-bottom: 10px;">Sincronizando dados da operação</p>
@@ -194,6 +195,7 @@
         </button>
     </div>
 
+    <!-- DIALOGO DO SISTEMA -->
     <div id="system-dialog" class="modal-overlay" style="z-index: 9999999;">
         <div class="modal-content" style="width: 350px; height: auto; margin: 30vh auto; display: flex; flex-direction: column; padding: 25px; text-align: center; border: 1px solid var(--border);">
             <h3 id="dialog-title" style="margin-top: 0; color: var(--primary);">Aviso</h3>
@@ -203,6 +205,7 @@
         </div>
     </div>
 
+    <!-- TELA DE LOGIN -->
     <div id="login-view">
         <div class="login-box">
             <h2 style="color: var(--primary); margin-top: 0;">La Partigiana</h2>
@@ -219,6 +222,7 @@
         </div>
     </div>
 
+    <!-- HEADER & SIDEBAR -->
     <div id="app-container" style="display: none;">
         <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
         <div id="sidebar" class="sidebar">
@@ -242,6 +246,9 @@
             <button id="btn-master-pedido" class="btn-success" onclick="openOrderModal()">REALIZAR PEDIDO</button>
         </header>
 
+        <!-- VIEWS -->
+        
+        <!-- 1. KANBAN -->
         <div id="kanban-view" class="view">
             <div class="op-banner">
                 <div>
@@ -256,6 +263,7 @@
             </div>
         </div>
 
+        <!-- 2. GESTÃO DE CARDÁPIO E MODIFICADORES -->
         <div id="menu-view" class="view">
             <div class="menu-dashboard">
                 <div class="menu-top-bar">
@@ -274,6 +282,7 @@
             </div>
         </div>
 
+        <!-- 3. GESTÃO DE MESAS -->
         <div id="tables-view" class="view">
             <div class="menu-dashboard">
                 <div class="menu-top-bar">
@@ -284,6 +293,7 @@
             </div>
         </div>
 
+        <!-- 4. MÉTODOS DE PAGAMENTO -->
         <div id="payments-view" class="view">
             <div class="menu-dashboard">
                 <div class="menu-top-bar">
@@ -294,6 +304,7 @@
             </div>
         </div>
 
+        <!-- 5. TELA RELATÓRIOS -->
         <div id="reports-view" class="view">
             <h2>Relatório de Vendas (Inclui Arquivados)</h2>
             <input type="date" id="report-date" onchange="renderReports()" style="padding:10px; background:var(--bg); color:white; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px;">
@@ -304,6 +315,7 @@
             </table>
         </div>
 
+        <!-- 6. MEU PERFIL -->
         <div id="profile-view" class="view">
             <div class="menu-dashboard" style="max-width: 600px; margin: 0 auto; background: var(--surface); padding: 30px; border-radius: var(--radius); border: 1px solid var(--border);">
                 <h2 style="margin-top:0; text-align:center; color: var(--primary);">Meu Usuário</h2>
@@ -333,6 +345,7 @@
             </div>
         </div>
 
+        <!-- 7. CONFIGURAÇÕES ADMINISTRATIVAS -->
         <div id="settings-view" class="view">
             <div class="menu-dashboard">
                 <div class="menu-top-bar">
@@ -346,6 +359,7 @@
             </div>
         </div>
 
+        <!-- 8. CONFIGURAÇÕES DE IMPRESSÃO -->
         <div id="print-settings-view" class="view">
             <div class="menu-dashboard">
                 <div class="menu-top-bar">
@@ -381,13 +395,17 @@
 
                     <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; align-items: flex-start; background: #fff; padding: 20px; border-radius: var(--radius); overflow-x: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
                         <div id="print-preview-container" style="background: white; color: black; padding: 10px; border: 1px dashed #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                            </div>
+                            <!-- O preview será injetado via JS -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-    </div> <div id="order-modal" class="modal-overlay">
+    </div> <!-- End App Container -->
+
+    <!-- MODAL DE PEDIDO -->
+    <div id="order-modal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeOrderModal()">&times;</span>
             
@@ -429,6 +447,7 @@
 
             <div class="pdv-right">
                 
+                <!-- PAINEL DE CATÁLOGO (PADRÃO) -->
                 <div id="pdv-catalog-panel" style="display: flex; flex-direction: column; height: 100%;">
                     <div class="form-group" style="margin-bottom: 15px;">
                         <input type="text" id="pdv-search" placeholder="Pesquisar produto pelo nome..." oninput="searchPdvProducts(this.value)">
@@ -437,6 +456,7 @@
                     <div class="products-grid" id="pdv-products"></div>
                 </div>
 
+                <!-- PAINEL DE MODIFICADORES (DIVIDIDO) -->
                 <div id="pdv-modifier-panel" style="display: none; flex-direction: column; height: 100%;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">
                         <h3 id="mod-panel-title" style="margin: 0; color: var(--primary);">Personalizar Pedido</h3>
@@ -444,11 +464,13 @@
                     </div>
                     
                     <div class="mod-split-container">
+                        <!-- Metade Esquerda: Exclusões -->
                         <div class="mod-half exclusion">
                             <h4>Exclusões / Retiradas</h4>
                             <div id="mod-panel-grid-exc" class="grid-selection" style="flex-grow: 1; align-content: start;"></div>
                         </div>
                         
+                        <!-- Metade Direita: Adicionais -->
                         <div class="mod-half addon">
                             <h4>Adicionais</h4>
                             <div id="mod-panel-grid-add" class="grid-selection" style="flex-grow: 1; align-content: start;"></div>
@@ -470,6 +492,7 @@
         </div>
     </div>
 
+    <!-- DYNAMIC MINI MODAL -->
     <div id="mini-modal" class="mini-modal">
         <div class="mini-modal-content">
             <span class="close-btn" onclick="closeMiniModal()">&times;</span>
@@ -479,6 +502,7 @@
         </div>
     </div>
 
+    <!-- SEÇÃO DE IMPRESSÃO (Oculta na tela) -->
     <div id="print-section" style="display: none;"></div>
 
     <script>
@@ -497,14 +521,13 @@
         let cloudDb = null;
         let docRef = null;
 
-        // Try-Catch para não travar se o Google estiver bloqueado
         try {
             if (typeof firebase !== 'undefined') {
                 firebase.initializeApp(firebaseConfig);
                 cloudDb = firebase.firestore();
                 docRef = cloudDb.collection("pdv").doc("lapartigiana");
             } else {
-                console.warn("Script do Firebase não foi carregado (Sem Internet).");
+                console.warn("Script do Firebase não carregado.");
             }
         } catch (e) {
             console.error("Erro na inicialização do Firebase:", e);
@@ -576,7 +599,7 @@
             window.dialogPromptCallback = null;
         }
 
-        // --- SISTEMA DE INICIALIZAÇÃO BLINDADO ---
+        // --- SISTEMA DE INICIALIZAÇÃO E FALLBACK ---
         function finishInit() {
             if (isInitDone) return;
             isInitDone = true;
@@ -591,47 +614,49 @@
             }
         }
 
-        function fallbackOffline() {
-            if (isInitDone) return; 
+        function forceOfflineMode() {
+            console.warn("Acesso local forçado.");
             try {
                 let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
-                if (localFallback) { db = localFallback; }
-            } catch(e) { console.error("Erro no LocalStorage", e); }
+                if (localFallback && typeof localFallback === 'object') { 
+                    db = localFallback; 
+                }
+            } catch(e) {
+                console.error("Memória local corrompida", e);
+            }
             ensureIntegrity();
-            finishInit();
-        }
-
-        function forceOfflineMode() {
-            console.warn("Usuário forçou a entrada local.");
-            fallbackOffline();
+            if(!isInitDone) finishInit();
         }
 
         function initApp() {
-            // Se demorar mais de 3 segundos, ou se der erro síncrono antes disso, ele força o modo Local
+            // Gatilho de segurança caso a nuvem demore mais de 3 segundos
             setTimeout(() => {
                 if (!isInitDone) {
-                    console.warn("Timeout de nuvem. Forçando modo Local.");
-                    fallbackOffline();
+                    console.warn("Timeout da nuvem. Forçando offline.");
+                    forceOfflineMode();
                 }
             }, 3000);
 
-            if (docRef) {
+            try {
                 docRef.get().then((doc) => {
                     if (doc.exists) {
                         db = doc.data();
-                        ensureIntegrity();
                     } else {
-                        fallbackOffline();
+                        try {
+                            let localFallback = JSON.parse(localStorage.getItem('pdv_db'));
+                            if (localFallback && typeof localFallback === 'object') { db = localFallback; }
+                        } catch(e){}
                         docRef.set(db).catch(e=>{}); 
                     }
+                    ensureIntegrity();
                     finishInit();
                 }).catch((error) => {
                     console.error("Modo Offline Ativado pelo Catch.", error);
-                    fallbackOffline();
+                    forceOfflineMode();
                 });
-            } else {
-                // Se docRef é null (sem Firebase), chama offline imediatamente
-                fallbackOffline();
+            } catch(error) {
+                console.error("Erro fatal ao invocar Firebase:", error);
+                forceOfflineMode();
             }
         }
 
@@ -640,7 +665,6 @@
             if (!db.paymentMethods) db.paymentMethods = ['Pix', 'Dinheiro', 'Cartão'];
             if (!db.modifiers) db.modifiers = [];
             
-            // Migração de Modificadores Antigos (Se não tiver tipo, vira 'addon')
             db.modifiers.forEach(m => {
                 if (!m.type) m.type = 'addon';
             });
@@ -668,6 +692,8 @@
                 docRef.set(db).catch(err => console.error("Falha Nuvem:", err));
             }
         }
+
+        initApp();
 
         // --- SISTEMA DE LOGIN E SESSÃO ---
         function togglePasswordVisibility() {
@@ -1133,6 +1159,10 @@
 
         // --- NOVO MOTOR DE IMPRESSÃO VIA QZ TRAY (RAW / ESC-POS) ---
         function printTicket(order) {
+            if (typeof qz === 'undefined') {
+                showCustomAlert("A biblioteca do QZ Tray não carregou. Verifique sua internet.", "Erro Interno");
+                return;
+            }
             if (!qz.websocket.isActive()) {
                 qz.websocket.connect().then(function() {
                     executeQZPrint(order);
@@ -1146,11 +1176,9 @@
         }
 
         function executeQZPrint(order) {
-            // Procura exatamente pela impressora que você renomeou no Windows
             qz.printers.find("ELGIN i9(USB) (Copiar 1)").then(function(printer) {
                 var config = qz.configs.create(printer);
                 
-                // Tabela de comandos ESC/POS puros
                 var ESC = '\x1B';
                 var GS = '\x1D';
                 var LF = '\n';
@@ -1160,13 +1188,11 @@
                 var ALIGN_RIGHT = ESC + '\x61' + '\x32';
                 var BOLD_ON = ESC + '\x45' + '\x01';
                 var BOLD_OFF = ESC + '\x45' + '\x00';
-                var CUT = GS + '\x56' + '\x41' + '\x00'; // Comando mecânico de corte parcial
+                var CUT = GS + '\x56' + '\x41' + '\x00'; 
 
-                // Checa a configuração do sistema para decidir o tamanho da linha (80mm vs 58mm)
                 var widthChars = (db.printConfig && db.printConfig.width == 58) ? 32 : 48;
                 var divisor = '-'.repeat(widthChars) + LF;
 
-                // Montagem do vetor de impressão (Array)
                 var data = [
                     INIT,
                     ALIGN_CENTER,
@@ -1183,7 +1209,6 @@
                     ALIGN_LEFT
                 ];
 
-                // Loop dos produtos e modificadores
                 order.items.forEach(function(i) {
                     data.push(BOLD_ON, '- ' + i.name + ' (R$ ' + i.price.toFixed(2) + ')' + LF, BOLD_OFF);
                     
@@ -1198,17 +1223,15 @@
                     }
                 });
 
-                // Fechamento e Corte
                 data.push(
                     ALIGN_CENTER,
                     divisor,
                     ALIGN_RIGHT,
                     BOLD_ON, 'TOTAL: R$ ' + order.total.toFixed(2) + LF, BOLD_OFF,
-                    LF, LF, LF, LF, LF, // Avança a bobina 5 linhas para garantir o corte perfeito
+                    LF, LF, LF, LF, LF, 
                     CUT
                 );
 
-                // Envia direto para a placa da impressora
                 return qz.print(config, data);
 
             }).catch(function(err) {
