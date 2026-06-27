@@ -222,7 +222,7 @@
 
             <div class="sidebar-bottom">
                 <button onclick="switchViewAndClose('profile-view')">👤 Meu Usuário</button>
-                <button id="nav-print-settings" onclick="switchViewAndClose('print-settings-view')" style="display:none;">🖨️ Impressão (Comanda)</button>
+                <button id="nav-print-settings" onclick="switchViewAndClose('print-settings-view')" style="display:none;">🖨️ Impressão (KDS)</button>
                 <button id="nav-settings" onclick="switchViewAndClose('settings-view')" style="display:none;">⚙️ Configurações</button>
                 <button onclick="handleLogout()" style="color: var(--danger);">Sair</button>
             </div>
@@ -343,12 +343,12 @@
         <div id="print-settings-view" class="view">
             <div class="menu-dashboard">
                 <div class="menu-top-bar">
-                    <h2 style="margin:0; color:var(--text);">Configuração da Comanda (ESC/POS RAW)</h2>
+                    <h2 style="margin:0; color:var(--text);">Configuração da Comanda (Cozinha/ESC-POS)</h2>
                 </div>
                 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px; background: var(--surface); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);">
-                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Estas configurações enviam comandos matemáticos direto para a placa da impressora Elgin.</p>
+                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Estas configurações enviam comandos matemáticos direto para a impressora. Os valores em R$ foram removidos da impressão de acordo com a sua solicitação.</p>
                         
                         <div class="form-group">
                             <label>Largura da Bobina (mm)</label>
@@ -356,11 +356,13 @@
                             <small style="color:#aaa; display:block; margin-top:5px;">Padrão: 80mm (Aprox. 48 colunas) ou 58mm (32 colunas)</small>
                         </div>
                         <div class="form-group">
-                            <label>Tamanho do Texto (Hardware)</label>
+                            <label>Tamanho do Texto (Multiplicador ESC/POS)</label>
                             <select id="cfg-print-size" onchange="updatePrintPreview()">
-                                <option value="0">Normal (Tamanho Padrão)</option>
-                                <option value="17">Duplo (Dobro de Altura e Largura)</option>
-                                <option value="1">Apenas Altura Dupla</option>
+                                <option value="0">1x - Normal (Tamanho Padrão)</option>
+                                <option value="1">2x Altura (Mais alto, mas mesma largura)</option>
+                                <option value="16">2x Largura (Mais largo, mesma altura)</option>
+                                <option value="17">2x Completo (Dobro de Altura e Largura)</option>
+                                <option value="34">3x Completo (Gigante)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -516,7 +518,6 @@
             profiles: [],
             users: [],
             shiftOpen: false,
-            // Valores padrão ajustados para ESC/POS Hexadecimal Integers (Strings aqui para não quebrar JSON parse antigo)
             printConfig: { width: 80, fontSize: "0", fontFamily: "0", bold: false }
         };
 
@@ -1101,7 +1102,7 @@
 
         function updatePrintPreview() {
             let width = document.getElementById('cfg-print-width').value || 80;
-            let sizeChoice = document.getElementById('cfg-print-size').value; // "0", "17", "1"
+            let sizeChoice = document.getElementById('cfg-print-size').value; // "0", "1", "16", "17", "34"
             let fontChoice = document.getElementById('cfg-print-font').value; // "0" (A), "1" (B)
             let isBold = document.getElementById('cfg-print-bold').checked;
 
@@ -1112,8 +1113,10 @@
             let cssMargin = '0';
             let cssLetterSpacing = fontChoice === "1" ? '-1px' : '0px'; // Simula fonte condensada
             
-            if (sizeChoice === "17") { cssTransform = 'scale(2)'; cssMargin = '20px 0'; }
             if (sizeChoice === "1") { cssTransform = 'scaleY(2)'; cssMargin = '10px 0'; }
+            if (sizeChoice === "16") { cssTransform = 'scaleX(2)'; cssMargin = '0 10%'; }
+            if (sizeChoice === "17") { cssTransform = 'scale(2)'; cssMargin = '20px 0'; }
+            if (sizeChoice === "34") { cssTransform = 'scale(3)'; cssMargin = '30px 0'; }
 
             preview.style.width = width + 'mm';
             
@@ -1130,14 +1133,12 @@
                     <hr style="border:1px dashed black; margin: 8px 0;">
                     <div style="transform:${cssTransform}; transform-origin: left; margin:${cssMargin};">
                         <strong>ITENS:</strong><br>
-                        <strong>- Pizza Calabresa (R$ 50,00)</strong><br>
+                        <strong>- Pizza Calabresa</strong><br>
                         &nbsp; [+] Borda Recheada<br>
                         &nbsp; [-] Cebola<br>
                     </div>
-                    <hr style="border:1px dashed black; margin: 8px 0;">
-                    <div style="text-align:right; transform:${cssTransform}; transform-origin: right; margin:${cssMargin};">
-                        <strong>TOTAL: R$ 50,00</strong>
-                    </div>
+                    <br>
+                    <div style="text-align:center;">--- FIM DO PEDIDO ---</div>
                 </div>
             `;
         }
@@ -1221,7 +1222,8 @@
                 ];
 
                 order.items.forEach(function(i) {
-                    data.push(BOLD_ON, '- ' + i.name + ' (R$ ' + i.price.toFixed(2) + ')' + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF));
+                    // Preço removido conforme solicitação
+                    data.push(BOLD_ON, '- ' + i.name + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF));
                     
                     if (i.modifiers && i.modifiers.length > 0) {
                         i.modifiers.forEach(function(m) {
@@ -1234,11 +1236,11 @@
                     }
                 });
 
+                // Total removido para focar apenas na produção
                 data.push(
                     ALIGN_CENTER,
                     divisor,
-                    ALIGN_RIGHT,
-                    BOLD_ON, 'TOTAL: R$ ' + order.total.toFixed(2) + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF),
+                    '--- FIM DO PEDIDO ---' + LF,
                     LF, LF, LF, LF, LF, 
                     CUT
                 );
