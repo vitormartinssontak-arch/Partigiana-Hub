@@ -237,7 +237,7 @@
         <div id="kanban-view" class="view">
             <div class="op-banner">
                 <div>
-                    Status do Caixa: <span id="shift-status-badge" class="status-badge closed">Fechado</span>
+                    Status do Caixa: <span id="shift-status-badge" class="status-badge open">Aberta</span>
                 </div>
                 <button id="btn-shift-toggle" class="btn-success" onclick="toggleShift()">ABRIR OPERAÇÃO</button>
             </div>
@@ -297,7 +297,7 @@
         </div>
 
         <div id="profile-view" class="view">
-            <div class="menu-dashboard" style="max-width: 600px; margin: 0 auto; background: var(--surface); padding: 30px; border-radius: var(--radius); border: 1px solid var(--border);">
+            <div class="menu-dashboard" style="max-width:600px; margin: 0 auto; background: var(--surface); padding: 30px; border-radius: var(--radius); border: 1px solid var(--border);">
                 <h2 style="margin-top:0; text-align:center; color: var(--primary);">Meu Usuário</h2>
                 
                 <div class="profile-pic-container">
@@ -346,7 +346,7 @@
                 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px; background: var(--surface); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);">
-                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Configurações de pulsos elétricos da impressora térmica Elgin i9.</p>
+                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Comandos de hardware ESC/POS para a Elgin i9.</p>
                         
                         <div class="form-group">
                             <label>Largura da Bobina (mm)</label>
@@ -355,33 +355,32 @@
                         </div>
 
                         <hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">
-                        <h4 style="color: var(--primary); margin: 0 0 10px 0;">Principal (Pizzas/Pratos)</h4>
+                        <h4 style="color: var(--primary); margin: 0 0 10px 0;">Item Principal (Pizzas)</h4>
                         <div class="form-group">
                             <label>Tamanho do Texto Principal</label>
                             <select id="cfg-print-size" onchange="updatePrintPreview()">
-                                <option value="0">1x - Normal (Padrão)</option>
+                                <option value="0">1x - Normal</option>
                                 <option value="1">2x Altura</option>
                                 <option value="16">2x Largura</option>
-                                <option value="17">2x Completo (Altura e Largura)</option>
-                                <option value="34">3x Completo (Gigante)</option>
+                                <option value="17" selected>2x Completo (Destaque Principal)</option>
+                                <option value="34">3x Completo</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Tipo de Fonte (Principal)</label>
                             <select id="cfg-print-font" onchange="updatePrintPreview()">
-                                <option value="0">Fonte A (Mais Larga)</option>
-                                <option value="1">Fonte B (Condensada - Mais Fina)</option>
+                                <option value="0">Fonte A</option>
+                                <option value="1">Fonte B (Condensada)</option>
                             </select>
                         </div>
 
                         <hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">
                         <h4 style="color: #ffb100; margin: 0 0 10px 0;">Modificadores (Adicionais/Retiradas)</h4>
                         <div class="form-group">
-                            <label>Tamanho do Texto Modificador</label>
+                            <label>Motor de Escala (Opção Customizada 1.5x)</label>
                             <select id="cfg-mod-size" onchange="updatePrintPreview()">
-                                <option value="0">1x - Normal (Recomendado)</option>
-                                <option value="1">2x Altura</option>
-                                <option value="16">2x Largura</option>
+                                <option value="0">1x - Normal</option>
+                                <option value="16" selected>1.5x (Largura Dobrada + Fonte B)</option>
                                 <option value="17">2x Completo</option>
                             </select>
                         </div>
@@ -389,12 +388,16 @@
                             <label>Tipo de Fonte (Modificadores)</label>
                             <select id="cfg-mod-font" onchange="updatePrintPreview()">
                                 <option value="0">Fonte A</option>
-                                <option value="1" selected>Fonte B (Mais Fina e Evidente)</option>
+                                <option value="1" selected>Fonte B (Condensada)</option>
                             </select>
+                        </div>
+                        <div class="checkbox-item" style="margin-top: 10px;">
+                            <input type="checkbox" id="cfg-mod-reverse" onchange="updatePrintPreview()">
+                            <label for="cfg-mod-reverse">Tarja Preta (Fundo Preto c/ Texto Branco)</label>
                         </div>
 
                         <hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">
-                        <div class="checkbox-item" style="margin-top: 15px;">
+                        <div class="checkbox-item">
                             <input type="checkbox" id="cfg-print-bold" onchange="updatePrintPreview()">
                             <label for="cfg-print-bold">Forçar Texto Inteiro em Negrito</label>
                         </div>
@@ -410,9 +413,7 @@
             </div>
         </div>
 
-    </div> 
-
-    <div id="order-modal" class="modal-overlay">
+    </div> <div id="order-modal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeOrderModal()">&times;</span>
             
@@ -486,8 +487,8 @@
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button onclick="cancelModifierSelection()" style="padding: 15px; border-radius: var(--radius); background: var(--surface); color: var(--text); border: 1px solid var(--border); cursor: pointer; flex: 1; font-weight: bold;">Cancelar</button>
-                        <button class="btn-success" id="btn-confirm-modifiers" style="flex: 2; padding: 15px; font-size: 16px;" onclick="confirmModifiersAndAddPanel()">Adicionar ao Pedido</button>
+                        <button onclick="cancelModifierSelection()" style="padding:15px; border-radius:var(--radius); background:var(--surface); color:var(--text); border:1px solid var(--border); cursor:pointer; flex:1; font-weight:bold;">Cancelar</button>
+                        <button class="btn-success" id="btn-confirm-modifiers" style="flex:2; padding:15px; font-size:16px;" onclick="confirmModifiersAndAddPanel()">Adicionar ao Pedido</button>
                     </div>
                 </div>
 
@@ -546,14 +547,14 @@
             profiles: [],
             users: [],
             shiftOpen: false,
-            // Armazena a configuração de ambos (Principal e Modificadores) separadamente
-            printConfig: { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "0", modFontFamily: "1", bold: false }
+            // Adicionado configs de cor e dimensões para o modificador
+            printConfig: { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "16", modFontFamily: "1", modReverse: true, bold: false }
         };
 
         let currentSessionUser = null;
         let currentCart = [];
         let currentCategoryFilter = '';
-        let currentSearchTerm = '';
+        let currentSearchTerm = ''; // Declarado globalmente corrigido
         let activeMenuTab = 'categories';
         let activeAdminTab = 'profiles';
         let editingOrderId = null; 
@@ -691,10 +692,11 @@
             if (typeof db.shiftOpen === 'undefined') db.shiftOpen = false;
             
             if (!db.printConfig) {
-                db.printConfig = { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "0", modFontFamily: "1", bold: false };
+                db.printConfig = { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "16", modFontFamily: "1", modReverse: true, bold: false };
             } else {
-                if (!db.printConfig.modFontSize) db.printConfig.modFontSize = "0";
+                if (!db.printConfig.modFontSize) db.printConfig.modFontSize = "16";
                 if (!db.printConfig.modFontFamily) db.printConfig.modFontFamily = "1";
+                if (typeof db.printConfig.modReverse === 'undefined') db.printConfig.modReverse = true;
             }
             
             if (!db.profiles || db.profiles.length === 0) {
@@ -812,6 +814,7 @@
         }
 
         function switchMenuTab(tab) {
+            activeMenuTabCheck = tab;
             activeMenuTab = tab;
             document.getElementById('tab-categories').classList.toggle('active', tab === 'categories');
             document.getElementById('tab-products').classList.toggle('active', tab === 'products');
@@ -1011,7 +1014,7 @@
         }
         function selectPdvPayment(payment) { document.getElementById('pdv-payment').value = payment; document.getElementById('btn-pdv-payment').firstElementChild.innerText = payment; closeMiniModal(); }
 
-        function formatCurrencyMask(input) { let value = input.value.replace(/\D/g, ''); if (value === '') { input.value = ''; return; } value = (parseInt(value, 10) / 100).toFixed(2); input.value = value.replace('.', ','); }
+        function formatCurrencyMask(i) { let v = i.value.replace(/\D/g,''); v = (parseInt(v)||0)/100; i.value = v > 0 ? v.toFixed(2).replace('.',',') : ''; }
 
         // --- GESTÃO DE CARDÁPIO ---
         function renderMenuDashboard() {
@@ -1026,7 +1029,7 @@
             } else if (activeMenuTab === 'products') {
                 db.products.forEach(p => {
                     let thumb = p.image ? `<img src="${p.image}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; margin-right:15px; background:var(--bg);" onerror="this.style.display='none'">` : `<div style="width:45px; height:45px; border-radius:6px; margin-right:15px; background:var(--bg); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6em; color:#555;">S/ img</div>`;
-                    area.innerHTML += `<div class="menu-item-card" onclick="viewProductDetails(p.id)"><div style="display:flex; align-items:center;">${thumb}<div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">R$ ${p.price.toFixed(2)}</span></div></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openProductForm(${p.id})">Editar</button><button onclick="duplicateProduct(${p.id})">Duplicar</button><button class="btn-delete" onclick="deleteProduct(${p.id})">Excluir</button></div></div>`;
+                    area.innerHTML += `<div class="menu-item-card" onclick="viewProductDetails(${p.id})"><div style="display:flex; align-items:center;">${thumb}<div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">R$ ${p.price.toFixed(2)}</span></div></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openProductForm(${p.id})">Editar</button><button onclick="duplicateProduct(${p.id})">Duplicar</button><button class="btn-delete" onclick="deleteProduct(${p.id})">Excluir</button></div></div>`;
                 });
             } else if (activeMenuTab === 'modifiers') {
                 if(!db.modifiers) db.modifiers = [];
@@ -1050,9 +1053,9 @@
             }, `Configurar Impressão: ${m.name}`);
             
             document.getElementById('dialog-buttons').innerHTML = `
-                <button onclick="closeSystemDialog()" style="padding: 10px 15px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex: 1;">Cancelar</button>
+                <button onclick="closeSystemDialog()" style="padding:10px 15px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; flex:1;">Cancelar</button>
                 <button style="background:var(--danger); color:white; border:none; padding:10px; border-radius:var(--radius); font-weight:bold; cursor:pointer; flex:1;" onclick="let mObj = db.modifiers.find(x => x.id === ${modId}); if(mObj) mObj.imprimeCozinha = false; saveDb(); closeSystemDialog(); renderMenuDashboard();">Ocultar na Cozinha</button>
-                <button class="btn-success" style="flex: 1;" onclick="let mObj = db.modifiers.find(x => x.id === ${modId}); if(mObj) mObj.imprimeCozinha = true; saveDb(); closeSystemDialog(); renderMenuDashboard();">Imprimir na Cozinha</button>
+                <button class="btn-success" style="flex:1;" onclick="let mObj = db.modifiers.find(x => x.id === ${modId}); if(mObj) mObj.imprimeCozinha = true; saveDb(); closeSystemDialog(); renderMenuDashboard();">Imprimir na Cozinha</button>
             `;
         }
         
@@ -1128,7 +1131,7 @@
             const modal = document.getElementById('mini-modal'); let p = productId ? db.products.find(x => x.id === productId) : null; let currentCats = p ? (p.categories || []) : [];
             let checkboxesHtml = db.categories.map(c => `
                 <div class="checkbox-item">
-                    <input type="checkbox" id="cat-${c.name}" value="${c.name}" ${letCats.includes(c.name) ? 'checked' : ''}>
+                    <input type="checkbox" id="cat-${c.name}" value="${c.name}" ${currentCats.includes(c.name) ? 'checked' : ''}>
                     <label for="cat-${c.name}">${c.name}</label>
                 </div>`).join('');
             
@@ -1142,7 +1145,6 @@
             document.getElementById('mini-modal-footer').innerHTML = `<button class="btn-success" onclick="saveProduct(${productId})">Salvar</button>`;
             modal.style.display = 'block';
         }
-        function formatCurrencyMask(input) { let value = input.value.replace(/\D/g, ''); if (value === '') { input.value = ''; return; } value = (parseInt(value, 10) / 100).toFixed(2); input.value = value.replace('.', ','); }
         function saveProduct(productId) {
             let name = document.getElementById('modal-p-name').value.trim(); let price = parseFloat(document.getElementById('modal-p-price').value.replace(',', '.')); let image = document.getElementById('modal-p-image').value.trim(); let checkedCats = [];
             db.categories.forEach(c => { if(document.getElementById(`cat-${c.name}`).checked) checkedCats.push(c.name); });
@@ -1213,13 +1215,13 @@
 
         // --- IMPRESSÃO CONFIG ---
         function loadPrintConfig() {
-            let cfg = db.printConfig || { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "0", modFontFamily: "1", bold: false };
+            let cfg = db.printConfig || { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "16", modFontFamily: "1", modReverse: true, bold: false };
             document.getElementById('cfg-print-width').value = cfg.width;
             document.getElementById('cfg-print-size').value = cfg.fontSize;
             document.getElementById('cfg-print-font').value = cfg.fontFamily;
-            document.getElementById('cfg-mod-size').value = cfg.modFontSize || "0";
+            document.getElementById('cfg-mod-size').value = cfg.modFontSize || "16";
             document.getElementById('cfg-mod-font').value = cfg.modFontFamily || "1";
-            document.getElementById('cfg-print-bold').checked = cfg.bold;
+            document.getElementById('cfg-mod-reverse').checked = !!cfg.modReverse;
             updatePrintPreview();
         }
 
@@ -1229,6 +1231,7 @@
             let fontChoice = document.getElementById('cfg-print-font').value;
             let modSize = document.getElementById('cfg-mod-size').value;
             let modFont = document.getElementById('cfg-mod-font').value;
+            let modReverse = document.getElementById('cfg-mod-reverse').checked;
             let isBold = document.getElementById('cfg-print-bold').checked;
 
             let preview = document.getElementById('print-preview-container');
@@ -1242,9 +1245,14 @@
             if (sizeChoice === "17") { cssTransform = 'scale(2)'; cssMargin = '20px 0'; }
             if (sizeChoice === "34") { cssTransform = 'scale(3)'; cssMargin = '30px 0'; }
 
-            // Visualmente deixamos o modificador menor e fino para representar o tamanho normal/fino
-            let modTransform = modSize === "17" ? 'scale(1.2)' : 'scale(0.9)';
-            let modLetterSpacing = modFont === "1" ? '-1.5px' : '0px';
+            // Simulação escala de 1.5x (Largura Dobrada + Fonte Condensada B)
+            let modTransform = 'scaleX(1.2)';
+            let modSpacing = '0px';
+            
+            if (modSize === "17") modTransform = 'scale(2)';
+            if (modFont === "1") modSpacing = '-1px'; 
+
+            let modTarjaCss = modReverse ? 'background: black; color: white; padding: 4px 8px; display: inline-block;' : '';
 
             preview.style.width = width + 'mm';
             
@@ -1263,9 +1271,9 @@
                         <strong>ITENS DA COZINHA:</strong><br>
                         <strong>- Pizza Calabresa</strong><br>
                     </div>
-                    <div style="transform:${modTransform}; letter-spacing:${modLetterSpacing}; transform-origin: left; margin-left:15px; font-weight:lighter;">
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--danger);">- Sem cebola</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--primary);">+ Com catupiry</span><br>
+                    <div style="transform:${modTransform}; letter-spacing:${modSpacing}; transform-origin: left; margin-left:15px; font-weight:lighter; margin-top:5px;">
+                        <span style="${modTarjaCss}">&nbsp;&nbsp;&nbsp;&nbsp;- Sem cebola</span><br>
+                        <span style="${modTarjaCss}">&nbsp;&nbsp;&nbsp;&nbsp;+ Com catupiry</span><br>
                     </div>
                     <br>
                     <div style="font-size:0.8em; color:#666; text-align:center;">(Bebidas não são impressas aqui)</div>
@@ -1280,13 +1288,14 @@
                 fontFamily: document.getElementById('cfg-print-font').value,
                 modFontSize: document.getElementById('cfg-mod-size').value,
                 modFontFamily: document.getElementById('cfg-mod-font').value,
+                modReverse: document.getElementById('cfg-mod-reverse').checked,
                 bold: document.getElementById('cfg-print-bold').checked
             };
             saveDb();
             showCustomAlert("Configurações RAW salvas com sucesso!", "Sucesso");
         }
 
-        // --- MOTOR DE IMPRESSÃO VIA QZ TRAY (COM TAMANHO DIFERENCIADO PARA MODS) ---
+        // --- MOTOR DE IMPRESSÃO VIA QZ TRAY ---
         function printTicket(order) {
             if (typeof qz === 'undefined') {
                 showCustomAlert("A biblioteca do QZ Tray não carregou. Verifique sua internet.", "Erro Interno");
@@ -1320,23 +1329,25 @@
                 var pCfg = db.printConfig || {};
                 var isBold = pCfg.bold ? '\x01' : '\x00';
                 
-                // Configuração Produto/Principal
+                // Main / Pizza
                 var fontSizeHex = String.fromCharCode(parseInt(pCfg.fontSize || "0"));
                 var fontFamilyHex = String.fromCharCode(parseInt(pCfg.fontFamily || "0"));
 
-                // Configuração Modificadores
-                var modFontSizeHex = String.fromCharCode(parseInt(pCfg.modFontSize || "0"));
+                // Modificadores - Tamanho personalizado simulando 1.5x (Fonte Condensada B + Largura Dupla)
+                var modFontSizeHex = String.fromCharCode(parseInt(pCfg.modFontSize || "16"));
                 var modFontFamilyHex = String.fromCharCode(parseInt(pCfg.modFontFamily || "1"));
+
+                // Comandos reverso (Tarja Preta / Fundo Invertido)
+                var REVERSE_ON = pCfg.modReverse ? (GS + '\x42' + '\x01') : '';
+                var REVERSE_OFF = pCfg.modReverse ? (GS + '\x42' + '\x00') : '';
 
                 var CUSTOM_BOLD = ESC + '\x45' + isBold;
                 var CUSTOM_SIZE = GS + '\x21' + fontSizeHex;
                 var CUSTOM_FONT = ESC + '\x4D' + fontFamilyHex;
 
-                // Comandos específicos para diminuir os modificadores
                 var SET_MOD_FONT = ESC + '\x4D' + modFontFamilyHex;
                 var SET_MOD_SIZE = GS + '\x21' + modFontSizeHex;
                 
-                // Retorna para a fonte e tamanho configurados para o item principal
                 var RESTORE_FONT = ESC + '\x4D' + fontFamilyHex;
                 var RESTORE_SIZE = GS + '\x21' + fontSizeHex;
 
@@ -1376,12 +1387,11 @@
 
                     if (deveImprimeItem(i)) {
                         itensImpressosCount++;
-                        // Imprime o item principal com o tamanho configurado no painel
                         data.push(RESTORE_SIZE, RESTORE_FONT, BOLD_ON, '- ' + i.name + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF));
                         
                         if (i.modifiers && i.modifiers.length > 0) {
-                            // Aplica o tamanho menor, fonte fina e zera negrito para os modificadores
-                            data.push(SET_MOD_FONT, SET_MOD_SIZE, BOLD_OFF);
+                            // Aciona a fonte menor, modo invertido (tarja preta) ligado e zera negrito
+                            data.push(SET_MOD_FONT, SET_MOD_SIZE, REVERSE_ON, BOLD_OFF);
                             
                             i.modifiers.forEach(function(m) {
                                 let modEntity = db.modifiers.find(x => x.id === m.id || x.name === m.name);
@@ -1391,12 +1401,16 @@
                                 }
                             });
                             
-                            // Restaura as configurações do item principal para a próxima linha
-                            data.push(RESTORE_SIZE, RESTORE_FONT);
+                            // Desliga o fundo preto e restaura o tamanho do título principal
+                            data.push(REVERSE_OFF, RESTORE_SIZE, RESTORE_FONT);
                             if (pCfg.bold) data.push(BOLD_ON);
                         }
                         if (i.obs) {
+                            // Também imprime as observações dentro da tarja, se desejar acompanhar os modificadores
+                            data.push(SET_MOD_FONT, SET_MOD_SIZE, REVERSE_ON, BOLD_OFF);
                             data.push('    Obs: ' + i.obs + LF);
+                            data.push(REVERSE_OFF, RESTORE_SIZE, RESTORE_FONT);
+                            if (pCfg.bold) data.push(BOLD_ON);
                         }
                     }
                 });
@@ -1457,7 +1471,7 @@
         
         function searchPdvProducts(term) { 
             currentTerm = term.toLowerCase(); 
-            filterPdvProducts(currentCategoryFilter); 
+            filterPdvProducts(term);
         }
         
         function renderPdvCategories() {
