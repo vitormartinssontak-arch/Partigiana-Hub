@@ -148,7 +148,6 @@
         .profile-pic-container { text-align: center; margin-bottom: 20px; }
         .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); background: var(--bg); margin-bottom: 10px; display: inline-block; }
         
-        /* Oculta para impressão nativa caso o usuário acione CTRL+P sem querer */
         @media print {
             body * { visibility: hidden; }
             .no-print { display: none !important; }
@@ -162,7 +161,6 @@
     <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.2/qz-tray.min.js"></script>
     
     <script>
-        // CAIXA PRETA - CAPTURA DE ERROS FATAIS SILENCIOSOS
         window.onerror = function(message, source, lineno, colno, error) {
             let loader = document.getElementById('loader-overlay');
             if(loader) {
@@ -348,7 +346,7 @@
                 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px; background: var(--surface); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);">
-                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Estas configurações enviam comandos matemáticos direto para a impressora. Os valores em R$ foram removidos da impressão de acordo com a sua solicitação.</p>
+                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Estas configurações enviam comandos matemáticos direto para a impressora. Os valores em R$ foram removidos.</p>
                         
                         <div class="form-group">
                             <label>Largura da Bobina (mm)</label>
@@ -509,7 +507,12 @@
         }
 
         let db = {
-            categories: ['Pizzas Salgadas', 'Pizzas Doces', 'Bebidas'],
+            // Transformamos categories de array simples para array de objetos, contendo a regra de cozinha
+            categories: [
+                { name: 'Pizzas Salgadas', imprimeCozinha: true }, 
+                { name: 'Pizzas Doces', imprimeCozinha: true }, 
+                { name: 'Bebidas', imprimeCozinha: false }
+            ],
             products: [],
             modifiers: [], 
             orders: [],
@@ -642,6 +645,22 @@
             db.modifiers.forEach(m => {
                 if (!m.type) m.type = 'addon';
             });
+
+            // Converte array de categorias simples antigo para objetos com a regra de impressão (blindagem)
+            if (db.categories && db.categories.length > 0) {
+                db.categories = db.categories.map(c => {
+                    if (typeof c === 'string') {
+                        return { name: c, imprimeCozinha: !c.toLowerCase().includes('bebida') };
+                    }
+                    return c;
+                });
+            } else {
+                db.categories = [
+                    { name: 'Pizzas Salgadas', imprimeCozinha: true }, 
+                    { name: 'Pizzas Doces', imprimeCozinha: true }, 
+                    { name: 'Bebidas', imprimeCozinha: false }
+                ];
+            }
 
             if (typeof db.shiftOpen === 'undefined') db.shiftOpen = false;
             if (!db.printConfig) db.printConfig = { width: 80, fontSize: "0", fontFamily: "0", bold: false };
@@ -963,18 +982,18 @@
 
         function formatCurrencyMask(input) { let value = input.value.replace(/\D/g, ''); if (value === '') { input.value = ''; return; } value = (parseInt(value, 10) / 100).toFixed(2); input.value = value.replace('.', ','); }
 
-        // --- GESTÃO DE CARDÁPIO (INCLUI MODIFICADORES COM TIPOS) ---
+        // --- GESTÃO DE CARDÁPIO ---
         function renderMenuDashboard() {
             const area = document.getElementById('menu-content-area'); area.innerHTML = '';
             
             if (activeMenuTab === 'categories') {
                 db.categories.forEach((cat, index) => {
-                    let count = db.products.filter(p => (p.categories || []).includes(cat)).length;
-                    area.innerHTML += `<div class="menu-item-card" onclick="viewCategoryDetails('${cat}')"><div class="item-info"><span class="item-title">${cat}</span><span class="item-subtitle">${count} produto(s)</span></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openCategoryForm('${cat}', ${index})">Editar</button><button onclick="duplicateCategory('${cat}')">Duplicar</button><button class="btn-delete" onclick="deleteCategory('${cat}')">Excluir</button></div></div>`;
+                    let count = db.products.filter(p => (p.categories || []).includes(cat.name)).length;
+                    let cCheck = cat.imprimeCozinha ? '<span style="color:var(--primary); font-size:0.8em; margin-left:10px;">[✔ Imprime na Cozinha]</span>' : '<span style="color:var(--danger); font-size:0.8em; margin-left:10px;">[✖ Não imprime]</span>';
+                    area.innerHTML += `<div class="menu-item-card" onclick="viewCategoryDetails('${cat.name}')"><div class="item-info"><span class="item-title">${cat.name} ${cCheck}</span><span class="item-subtitle">${count} produto(s)</span></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openCategoryForm('${cat.name}', ${index})">Editar</button><button onclick="duplicateCategory('${cat.name}')">Duplicar</button><button class="btn-delete" onclick="deleteCategory('${cat.name}')">Excluir</button></div></div>`;
                 });
             } else if (activeMenuTab === 'products') {
                 db.products.forEach(p => {
-                    let catsLabel = (p.categories || []).join(', ') || 'Nenhuma';
                     let thumb = p.image ? `<img src="${p.image}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; margin-right:15px; background:var(--bg);" onerror="this.style.display='none'">` : `<div style="width:45px; height:45px; border-radius:6px; margin-right:15px; background:var(--bg); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6em; color:#555;">S/ img</div>`;
                     area.innerHTML += `<div class="menu-item-card" onclick="viewProductDetails(${p.id})"><div style="display:flex; align-items:center;">${thumb}<div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">R$ ${p.price.toFixed(2)}</span></div></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openProductForm(${p.id})">Editar</button><button onclick="duplicateProduct(${p.id})">Duplicar</button><button class="btn-delete" onclick="deleteProduct(${p.id})">Excluir</button></div></div>`;
                 });
@@ -983,26 +1002,72 @@
                 db.modifiers.forEach((m, index) => {
                     let valInfo = m.price > 0 ? `+ R$ ${m.price.toFixed(2)}` : 'Grátis';
                     let typeBadge = m.type === 'exclusion' ? '<span style="color:var(--danger); font-size:0.8em; margin-left:10px;">[Exclusão]</span>' : '<span style="color:var(--primary); font-size:0.8em; margin-left:10px;">[Adicional]</span>';
-                    
                     area.innerHTML += `<div class="menu-item-card"><div class="item-info"><span class="item-title">${m.name} ${typeBadge}</span><span class="item-subtitle" style="color:var(--text);">${valInfo}</span></div><div class="item-actions"><button onclick="openModifierForm(${m.id})">Editar</button><button class="btn-delete" onclick="deleteModifier(${m.id})">Excluir</button></div></div>`;
                 });
             }
         }
         
         function openCategoryForm(oldName = '', index = -1) {
-            const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = oldName ? 'Editar Categoria' : 'Criar Categoria';
-            document.getElementById('mini-modal-body').innerHTML = `<div class="form-group"><label>Nome</label><input type="text" id="modal-cat-name" value="${oldName}"></div>`;
+            const modal = document.getElementById('mini-modal'); 
+            let catObj = db.categories.find(c => c.name === oldName);
+            let isChecked = catObj ? catObj.imprimeCozinha : true;
+            
+            document.getElementById('mini-modal-title').innerText = oldName ? 'Editar Categoria' : 'Criar Categoria';
+            document.getElementById('mini-modal-body').innerHTML = `
+                <div class="form-group"><label>Nome</label><input type="text" id="modal-cat-name" value="${oldName}"></div>
+                <div class="checkbox-item" style="margin-top:15px;">
+                    <input type="checkbox" id="modal-cat-print" ${isChecked ? 'checked' : ''}>
+                    <label for="modal-cat-print">Imprimir itens desta categoria na tela da cozinha / impressora</label>
+                </div>
+            `;
             document.getElementById('mini-modal-footer').innerHTML = `<button class="btn-success" onclick="saveCategory('${oldName}', ${index})">Salvar</button>`;
             modal.style.display = 'block';
         }
         function saveCategory(oldName, index) {
-            let newName = document.getElementById('modal-cat-name').value.trim(); if(!newName) return showCustomAlert("Nome inválido");
-            if(index > -1) { db.categories[index] = newName; db.products.forEach(p => { if(p.categories) p.categories = p.categories.map(c => c === oldName ? newName : c); }); } 
-            else { if(db.categories.includes(newName)) return showCustomAlert("Categoria já existe"); db.categories.push(newName); }
+            let newName = document.getElementById('modal-cat-name').value.trim(); 
+            let isPrintChecked = document.getElementById('modal-cat-print').checked;
+            
+            if(!newName) return showCustomAlert("Nome inválido");
+            
+            if(index > -1) { 
+                db.categories[index] = { name: newName, imprimeCozinha: isPrintChecked }; 
+                db.products.forEach(p => { 
+                    if(p.categories) p.categories = p.categories.map(c => c === oldName ? newName : c); 
+                }); 
+            } else { 
+                if(db.categories.some(c => c.name === newName)) return showCustomAlert("Categoria já existe"); 
+                db.categories.push({ name: newName, imprimeCozinha: isPrintChecked }); 
+            }
             saveDb(); closeMiniModal(); renderMenuDashboard();
         }
-        function deleteCategory(catName) { showCustomConfirm(`Excluir "${catName}"?`, () => { db.categories = db.categories.filter(c => c !== catName); db.products.forEach(p => { if(p.categories) p.categories = p.categories.filter(c => c !== catName); }); saveDb(); renderMenuDashboard(); }); }
-        function duplicateCategory(catName) { let newName = catName + " (Cópia)"; db.categories.push(newName); db.products.forEach(p => { if((p.categories||[]).includes(catName)) db.products.push({ id: Date.now()+Math.random(), name: p.name+" (Cópia)", price: p.price, image: p.image||'', categories: [newName]}); }); saveDb(); renderMenuDashboard(); }
+        function deleteCategory(catName) { 
+            showCustomConfirm(`Excluir "${catName}"?`, () => { 
+                db.categories = db.categories.filter(c => c.name !== catName); 
+                db.products.forEach(p => { 
+                    if(p.categories) p.categories = p.categories.filter(c => c !== catName); 
+                }); 
+                saveDb(); 
+                renderMenuDashboard(); 
+            }); 
+        }
+        function duplicateCategory(catName) { 
+            let catObj = db.categories.find(c => c.name === catName);
+            let newName = catName + " (Cópia)"; 
+            db.categories.push({ name: newName, imprimeCozinha: catObj ? catObj.imprimeCozinha : false }); 
+            db.products.forEach(p => { 
+                if((p.categories||[]).includes(catName)) {
+                    db.products.push({ 
+                        id: Date.now()+Math.random(), 
+                        name: p.name+" (Cópia)", 
+                        price: p.price, 
+                        image: p.image||'', 
+                        categories: [newName]
+                    });
+                }
+            }); 
+            saveDb(); 
+            renderMenuDashboard(); 
+        }
         function viewCategoryDetails(catName) {
             const modal = document.getElementById('mini-modal'); let listHtml = db.products.filter(p => (p.categories || []).includes(catName)).map(p => `<li>${p.name} (R$ ${p.price.toFixed(2)})</li>`).join('');
             document.getElementById('mini-modal-title').innerText = `Categoria: ${catName}`; document.getElementById('mini-modal-body').innerHTML = `<ul>${listHtml}</ul>`;
@@ -1014,8 +1079,8 @@
             const modal = document.getElementById('mini-modal'); let p = productId ? db.products.find(x => x.id === productId) : null; let currentCats = p ? (p.categories || []) : [];
             let checkboxesHtml = db.categories.map(c => `
                 <div class="checkbox-item">
-                    <input type="checkbox" id="cat-${c}" value="${c}" ${currentCats.includes(c) ? 'checked' : ''}>
-                    <label for="cat-${c}">${c}</label>
+                    <input type="checkbox" id="cat-${c.name}" value="${c.name}" ${currentCats.includes(c.name) ? 'checked' : ''}>
+                    <label for="cat-${c.name}">${c.name}</label>
                 </div>`).join('');
             
             document.getElementById('mini-modal-title').innerText = p ? 'Editar Produto' : 'Criar Produto';
@@ -1030,7 +1095,7 @@
         }
         function saveProduct(productId) {
             let name = document.getElementById('modal-p-name').value.trim(); let price = parseFloat(document.getElementById('modal-p-price').value.replace(',', '.')); let image = document.getElementById('modal-p-image').value.trim(); let checkedCats = [];
-            db.categories.forEach(c => { if(document.getElementById(`cat-${c}`).checked) checkedCats.push(c); });
+            db.categories.forEach(c => { if(document.getElementById(`cat-${c.name}`).checked) checkedCats.push(c.name); });
             if(!name || isNaN(price) || checkedCats.length===0) return showCustomAlert("Preencha corretamente.");
             if(productId) { let p = db.products.find(x => x.id === productId); if(p) { p.name = name; p.price = price; p.image = image; p.categories = checkedCats; } } 
             else { db.products.push({ id: Date.now(), name, price, image, categories: checkedCats }); }
@@ -1090,7 +1155,7 @@
         }
         function deleteModifier(id) { showCustomConfirm("Excluir modificador?", () => { db.modifiers = db.modifiers.filter(m => m.id !== id); saveDb(); renderMenuDashboard(); }); }
 
-        // --- IMPRESSÃO CONFIG (ATUALIZADA PARA SIMULAR O MODO ESC/POS) ---
+        // --- IMPRESSÃO CONFIG ---
         function loadPrintConfig() {
             let cfg = db.printConfig || { width: 80, fontSize: "0", fontFamily: "0", bold: false };
             document.getElementById('cfg-print-width').value = cfg.width;
@@ -1102,16 +1167,15 @@
 
         function updatePrintPreview() {
             let width = document.getElementById('cfg-print-width').value || 80;
-            let sizeChoice = document.getElementById('cfg-print-size').value; // "0", "1", "16", "17", "34"
-            let fontChoice = document.getElementById('cfg-print-font').value; // "0" (A), "1" (B)
+            let sizeChoice = document.getElementById('cfg-print-size').value; 
+            let fontChoice = document.getElementById('cfg-print-font').value; 
             let isBold = document.getElementById('cfg-print-bold').checked;
 
             let preview = document.getElementById('print-preview-container');
             
-            // Simulação visual das limitações da térmica
             let cssTransform = 'scale(1)';
             let cssMargin = '0';
-            let cssLetterSpacing = fontChoice === "1" ? '-1px' : '0px'; // Simula fonte condensada
+            let cssLetterSpacing = fontChoice === "1" ? '-1px' : '0px'; 
             
             if (sizeChoice === "1") { cssTransform = 'scaleY(2)'; cssMargin = '10px 0'; }
             if (sizeChoice === "16") { cssTransform = 'scaleX(2)'; cssMargin = '0 10%'; }
@@ -1132,13 +1196,13 @@
                     </div>
                     <hr style="border:1px dashed black; margin: 8px 0;">
                     <div style="transform:${cssTransform}; transform-origin: left; margin:${cssMargin};">
-                        <strong>ITENS:</strong><br>
+                        <strong>ITENS DA COZINHA:</strong><br>
                         <strong>- Pizza Calabresa</strong><br>
                         &nbsp; [+] Borda Recheada<br>
                         &nbsp; [-] Cebola<br>
                     </div>
                     <br>
-                    <div style="text-align:center;">--- FIM DO PEDIDO ---</div>
+                    <div style="font-size:0.8em; color:#666; text-align:center;">(Bebidas não são impressas aqui)</div>
                 </div>
             `;
         }
@@ -1154,7 +1218,7 @@
             showCustomAlert("Configurações RAW salvas com sucesso!", "Sucesso");
         }
 
-        // --- MOTOR DE IMPRESSÃO VIA QZ TRAY (RAW / ESC-POS) ---
+        // --- MOTOR DE IMPRESSÃO VIA QZ TRAY (COM FILTRO DE COZINHA) ---
         function printTicket(order) {
             if (typeof qz === 'undefined') {
                 showCustomAlert("A biblioteca do QZ Tray não carregou. Verifique sua internet.", "Erro Interno");
@@ -1185,13 +1249,11 @@
                 var ALIGN_RIGHT = ESC + '\x61' + '\x32';
                 var CUT = GS + '\x56' + '\x41' + '\x00'; 
                 
-                // Puxando configs do banco
                 var pCfg = db.printConfig || {};
                 var isBold = pCfg.bold ? '\x01' : '\x00';
                 var fontSizeHex = String.fromCharCode(parseInt(pCfg.fontSize || "0"));
                 var fontFamilyHex = String.fromCharCode(parseInt(pCfg.fontFamily || "0"));
 
-                // Comandos Dinâmicos injetados
                 var CUSTOM_BOLD = ESC + '\x45' + isBold;
                 var CUSTOM_SIZE = GS + '\x21' + fontSizeHex;
                 var CUSTOM_FONT = ESC + '\x4D' + fontFamilyHex;
@@ -1221,26 +1283,43 @@
                     ALIGN_LEFT
                 ];
 
+                // FILTRO: Só adiciona o item ao array se ele pertencer a uma categoria configurada para imprimir na cozinha
+                let itensImpressosCount = 0;
+                
                 order.items.forEach(function(i) {
-                    // Preço removido conforme solicitação
-                    data.push(BOLD_ON, '- ' + i.name + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF));
+                    // Descobre as categorias deste produto
+                    let prodCategories = i.categories || [];
                     
-                    if (i.modifiers && i.modifiers.length > 0) {
-                        i.modifiers.forEach(function(m) {
-                            var prefix = m.type === 'exclusion' ? '[-] ' : '[+] ';
-                            data.push('  ' + prefix + m.name + LF);
-                        });
-                    }
-                    if (i.obs) {
-                        data.push('  Obs: ' + i.obs + LF);
+                    // Verifica se alguma das categorias associadas a este produto tem 'imprimeCozinha === true'
+                    let deveImprimir = prodCategories.some(catName => {
+                        let catObj = db.categories.find(c => c.name === catName);
+                        return catObj && catObj.imprimeCozinha === true;
+                    });
+
+                    if (deveImprimir) {
+                        itensImpressosCount++;
+                        data.push(BOLD_ON, '- ' + i.name + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF));
+                        
+                        if (i.modifiers && i.modifiers.length > 0) {
+                            i.modifiers.forEach(function(m) {
+                                var prefix = m.type === 'exclusion' ? '[-] ' : '[+] ';
+                                data.push('  ' + prefix + m.name + LF);
+                            });
+                        }
+                        if (i.obs) {
+                            data.push('  Obs: ' + i.obs + LF);
+                        }
                     }
                 });
 
-                // Total removido para focar apenas na produção
+                // Segurança caso o pedido só tenha itens que não vão pra cozinha (ex: só bebidas)
+                if (itensImpressosCount === 0) {
+                    data.push('Nenhum item direcionado à cozinha.' + LF);
+                }
+
                 data.push(
                     ALIGN_CENTER,
                     divisor,
-                    '--- FIM DO PEDIDO ---' + LF,
                     LF, LF, LF, LF, LF, 
                     CUT
                 );
@@ -1254,7 +1333,7 @@
         }
 
 
-        // --- PDV E CARRINHO COM NOVA TELA DE MODIFICADORES NA DIREITA ---
+        // --- PDV E CARRINHO ---
         function openOrderModal(orderId = null) {
             if (!db.shiftOpen && !orderId) { showCustomAlert("OPERAÇÃO FECHADA. Abra o caixa primeiro para realizar pedidos."); return; }
             
@@ -1280,10 +1359,13 @@
         }
 
         function closeOrderModal() { document.getElementById('order-modal').style.display = 'none'; editingOrderId = null; }
-        function searchPdvProducts(term) { currentSearchTerm = term.toLowerCase(); filterPdvProducts(currentCategoryFilter); }
+        function searchPdvProducts(term) { currentSearchTerm = term.toLowerCase(); filterPdvProducts(term); }
+        
         function renderPdvCategories() {
-            const div = document.getElementById('pdv-categories'); div.innerHTML = '<button onclick="filterPdvProducts(\'\')">Todos</button>';
-            db.categories.forEach(c => div.innerHTML += `<button onclick="filterPdvProducts('${c}')">${c}</button>`); filterPdvProducts('');
+            const div = document.getElementById('pdv-categories'); 
+            div.innerHTML = '<button onclick="filterPdvProducts(\'\')">Todos</button>';
+            db.categories.forEach(c => div.innerHTML += `<button onclick="filterPdvProducts('${c.name}')">${c.name}</button>`); 
+            filterPdvProducts('');
         }
         
         function filterPdvProducts(cat) {
@@ -1302,7 +1384,7 @@
             if(p) { currentCart.push({...p, cartId: Date.now()+Math.random(), completed: false, modifiers: [], obs: '', basePrice: p.price}); renderCart(); }
         }
 
-        // --- LÓGICA DO NOVO PAINEL DIREITO DIVIDIDO DE MODIFICADORES ---
+        // --- PAINEL DE MODIFICADORES ---
         function openModifierSelection(productId, event) {
             event.stopPropagation(); 
             let p = db.products.find(x => x.id === productId); 
@@ -1413,7 +1495,7 @@
             }
         }
 
-        // Kanban Logic
+        // --- KANBAN ---
         function viewOrderInKanban(orderId) {
             let order = db.orders.find(o => o.id === orderId); if (!order) return;
             const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = `Pedido #${order.id.toString().slice(-4)} - ${order.table}`;
@@ -1472,7 +1554,7 @@
         }
         function deleteOrder(id) { showCustomConfirm("A exclusão removerá dos relatórios! Continuar?", () => { db.orders = db.orders.filter(o => o.id !== id); saveDb(); renderKanban(); if(document.getElementById('reports-view').classList.contains('active')) renderReports(); }); }
 
-        // Relatórios
+        // --- RELATÓRIOS ---
         function renderReports() {
             let filterDate = document.getElementById('report-date').value;
             let now = new Date(); let sevenDaysAgo = new Date(); sevenDaysAgo.setDate(now.getDate() - 7);
