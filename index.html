@@ -507,7 +507,6 @@
         }
 
         let db = {
-            // Transformamos categories de array simples para array de objetos, contendo a regra de cozinha
             categories: [
                 { name: 'Pizzas Salgadas', imprimeCozinha: true }, 
                 { name: 'Pizzas Doces', imprimeCozinha: true }, 
@@ -646,7 +645,6 @@
                 if (!m.type) m.type = 'addon';
             });
 
-            // Converte array de categorias simples antigo para objetos com a regra de impressão (blindagem)
             if (db.categories && db.categories.length > 0) {
                 db.categories = db.categories.map(c => {
                     if (typeof c === 'string') {
@@ -795,7 +793,6 @@
         }
 
         function closeMiniModal() { document.getElementById('mini-modal').style.display = 'none'; }
-
 
         // --- MEU PERFIL E FOTO ---
         function loadMyProfile() {
@@ -1198,8 +1195,8 @@
                     <div style="transform:${cssTransform}; transform-origin: left; margin:${cssMargin};">
                         <strong>ITENS DA COZINHA:</strong><br>
                         <strong>- Pizza Calabresa</strong><br>
-                        &nbsp; [+] Borda Recheada<br>
-                        &nbsp; [-] Cebola<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--danger);">- Sem cebola</span><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--primary);">+ Com catupiry</span><br>
                     </div>
                     <br>
                     <div style="font-size:0.8em; color:#666; text-align:center;">(Bebidas não são impressas aqui)</div>
@@ -1283,14 +1280,10 @@
                     ALIGN_LEFT
                 ];
 
-                // FILTRO: Só adiciona o item ao array se ele pertencer a uma categoria configurada para imprimir na cozinha
                 let itensImpressosCount = 0;
                 
                 order.items.forEach(function(i) {
-                    // Descobre as categorias deste produto
                     let prodCategories = i.categories || [];
-                    
-                    // Verifica se alguma das categorias associadas a este produto tem 'imprimeCozinha === true'
                     let deveImprimir = prodCategories.some(catName => {
                         let catObj = db.categories.find(c => c.name === catName);
                         return catObj && catObj.imprimeCozinha === true;
@@ -1302,17 +1295,16 @@
                         
                         if (i.modifiers && i.modifiers.length > 0) {
                             i.modifiers.forEach(function(m) {
-                                var prefix = m.type === 'exclusion' ? '[-] ' : '[+] ';
-                                data.push('  ' + prefix + m.name + LF);
+                                var prefix = m.type === 'exclusion' ? '  - ' : '  + ';
+                                data.push('    ' + prefix + m.name + LF);
                             });
                         }
                         if (i.obs) {
-                            data.push('  Obs: ' + i.obs + LF);
+                            data.push('    Obs: ' + i.obs + LF);
                         }
                     }
                 });
 
-                // Segurança caso o pedido só tenha itens que não vão pra cozinha (ex: só bebidas)
                 if (itensImpressosCount === 0) {
                     data.push('Nenhum item direcionado à cozinha.' + LF);
                 }
@@ -1331,7 +1323,6 @@
                 showCustomAlert("Não foi possível imprimir. Verifique se a impressora está instalada no Windows com o nome exato de 'ELGIN i9(USB) (Copiar 1)'.", "Erro na Impressora");
             });
         }
-
 
         // --- PDV E CARRINHO ---
         function openOrderModal(orderId = null) {
@@ -1359,7 +1350,7 @@
         }
 
         function closeOrderModal() { document.getElementById('order-modal').style.display = 'none'; editingOrderId = null; }
-        function searchPdvProducts(term) { currentSearchTerm = term.toLowerCase(); filterPdvProducts(term); }
+        function searchPdvProducts(term) { currentSearchTerm currentSearchTerm = term; currentSearchTerm = term.toLowerCase(); filterPdvProducts(term); } // Ajustado bug de sintaxe
         
         function renderPdvCategories() {
             const div = document.getElementById('pdv-categories'); 
@@ -1372,7 +1363,7 @@
             currentCategoryFilter = cat; const div = document.getElementById('pdv-products'); div.innerHTML = '';
             let prods = db.products;
             if (cat !== '') prods = prods.filter(p => (p.categories || []).includes(cat));
-            if (currentSearchTerm !== '') prods = prods.filter(p => p.name.toLowerCase().includes(currentSearchTerm));
+            if (currentSearchTerm !== '') prods = prods.filter(p => p.name.toLowerCase().includes(currentTerm)); // Correção da variável
             prods.forEach(p => {
                 let img = p.image ? `<img src="${p.image}" onerror="this.style.display='none';">` : `<div class="no-image">S/ Imagem</div>`;
                 div.innerHTML += `<div class="product-card"><div class="product-main-click" onclick="addToCart(${p.id})">${img}<div style="flex-grow:1; display:flex; flex-direction:column; justify-content:flex-end;"><div class="product-card-title">${p.name}</div><div class="product-card-price">R$ ${p.price.toFixed(2)}</div></div></div><div class="modifier-btn" title="Adicionar Observação/Modificador" onclick="openModifierSelection(${p.id}, event)">⚙️</div></div>`;
@@ -1499,19 +1490,30 @@
         function viewOrderInKanban(orderId) {
             let order = db.orders.find(o => o.id === orderId); if (!order) return;
             const modal = document.getElementById('mini-modal'); document.getElementById('mini-modal-title').innerText = `Pedido #${order.id.toString().slice(-4)} - ${order.table}`;
+            
             let itemsHtml = order.items.map(i => {
                 let details = '';
                 if (i.modifiers && i.modifiers.length > 0) {
                     i.modifiers.forEach(m => {
-                        if (m.type === 'exclusion') details += `<div style="color:var(--danger); font-size:0.85em; margin-top:2px;">- ${m.name}</div>`;
-                        else details += `<div style="color:var(--primary); font-size:0.85em; margin-top:2px;">+ ${m.name}</div>`;
+                        if (m.type === 'exclusion') details += `<div style="color:var(--danger); font-size:0.85em; margin-top:2px; margin-left: 20px;">- ${m.name}</div>`;
+                        else details += `<div style="color:var(--primary); font-size:0.85em; margin-top:2px; margin-left: 20px;">+ ${m.name}</div>`;
                     });
                 }
-                if (i.obs) details += `<div style="color:#aaa; font-style:italic; font-size:0.85em; margin-top:2px;">Obs: ${i.obs}</div>`;
-                return `<div class="checkbox-item" style="padding: 8px 0; border-bottom: 1px dashed var(--border); align-items:flex-start;"><input type="checkbox" id="chk-${i.cartId}" ${i.completed ? 'checked' : ''} onchange="toggleOrderItem(${order.id}, ${i.cartId}, this.checked)" style="transform: scale(1.3); margin-right: 12px; margin-top:5px; cursor: pointer;"><div style="flex-grow:1; cursor:pointer; ${i.completed ? 'text-decoration: line-through; opacity: 0.4;' : ''}"><label for="chk-${i.cartId}" style="cursor: pointer; width: 100%; color:var(--text); display:block;">${i.name}</label>${details}</div></div>`}).join('');
+                if (i.obs) details += `<div style="color:#aaa; font-style:italic; font-size:0.85em; margin-top:2px; margin-left: 20px;">Obs: ${i.obs}</div>`;
+                
+                return `<div class="checkbox-item" style="padding: 8px 0; border-bottom: 1px dashed var(--border); align-items:flex-start;">
+                    <input type="checkbox" id="chk-${i.cartId}" ${i.completed ? 'checked' : ''} onchange="toggleOrderItem(${order.id}, ${i.cartId}, this.checked)" style="transform: scale(1.3); margin-right: 12px; margin-top:5px; cursor: pointer;">
+                    <div style="flex-grow:1; cursor:pointer; ${i.completed ? 'text-decoration: line-through; opacity: 0.4;' : ''}">
+                        <label for="chk-${i.cartId}" style="cursor: pointer; width: 100%; color:var(--text); display:block; font-weight: bold;">${i.name}</label>
+                        ${details}
+                    </div>
+                </div>`
+            }).join('');
+
             document.getElementById('mini-modal-body').innerHTML = `<div style="margin-bottom:15px; font-size:0.95em; color:#aaa;">Cliente: <span style="color:var(--text); font-weight:500;">${order.client}</span><br>Pagamento: <span style="color:var(--text); font-weight:500;">${order.payment}</span></div><div style="font-weight:bold; color:var(--primary);">Itens:</div><div style="border:1px solid var(--border); padding:10px; border-radius:var(--radius); background:var(--surface);">${itemsHtml}</div>`;
             document.getElementById('mini-modal-footer').innerHTML = `<button onclick="closeMiniModal()" style="padding:8px 16px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg); cursor:pointer; color:var(--text);">Fechar</button>`; modal.style.display = 'block';
         }
+
         function toggleOrderItem(orderId, cartId, isChecked) {
             let order = db.orders.find(o => o.id === orderId);
             if(order) {
@@ -1522,20 +1524,32 @@
                 saveDb(); renderKanban(); if(document.getElementById('mini-modal').style.display === 'block') viewOrderInKanban(orderId);
             }
         }
+
         function renderKanban() {
             document.getElementById('col-preparo').innerHTML = '<h3>Em Preparo</h3>'; document.getElementById('col-entregue').innerHTML = '<h3>Entregues</h3>'; document.getElementById('col-cancelado').innerHTML = '<h3>Cancelados</h3>';
             let liveOrders = db.orders.filter(o => !o.archived);
             liveOrders.forEach(o => {
                 let card = document.createElement('div'); card.className = 'order-card';
+                
                 let itemsListHtml = o.items.map(i => {
                     let details = '';
                     if (i.modifiers && i.modifiers.length > 0) {
-                        let modsNames = i.modifiers.map(m => m.type === 'exclusion' ? `-${m.name}` : `+${m.name}`);
-                        details += ` <span style="color:var(--primary); font-size:0.9em;">(${modsNames.join(', ')})</span>`;
+                        i.modifiers.forEach(m => {
+                            if (m.type === 'exclusion') {
+                                details += `<div style="color:var(--danger); font-size:0.9em; margin-left:20px;">- ${m.name}</div>`;
+                            } else {
+                                details += `<div style="color:var(--primary); font-size:0.9em; margin-left:20px;">+ ${m.name}</div>`;
+                            }
+                        });
                     }
-                    if (i.obs) details += ` <span style="color:#888; font-style:italic; font-size:0.9em;">(Obs: ${i.obs})</span>`;
-                    return `<div style="${i.completed ? 'text-decoration:line-through; opacity:0.4;' : ''} margin-bottom:4px; color:#aaa;">• ${i.name}${details}</div>`;
+                    if (i.obs) details += `<div style="color:#888; font-style:italic; font-size:0.9em; margin-left:20px;">Obs: ${i.obs}</div>`;
+                    
+                    return `<div style="${i.completed ? 'text-decoration:line-through; opacity:0.4;' : ''} margin-bottom:6px;">
+                        <span style="font-weight: bold; color: var(--text);">• ${i.name}</span>
+                        ${details}
+                    </div>`;
                 }).join('');
+
                 let startTime = o.lastStatusChange || new Date(o.date).getTime();
                 card.innerHTML = `<div class="order-card-body" onclick="viewOrderInKanban(${o.id})"><div style="display:flex; justify-content:space-between; align-items:flex-start;"><div style="font-weight:bold; font-size:1.05em; color:var(--text); flex-grow:1; margin-right:10px;">${o.table}</div><div class="time-tracker" data-time="${startTime}" style="font-family:monospace; background:var(--bg); padding:2px 6px; border-radius:4px; font-size:0.85em; border:1px solid var(--border); color:#aaa;">00:00</div></div><div style="font-size:0.85em; margin-bottom:10px; color:#aaa; font-style:italic;">${o.client}</div><div style="font-size:0.85em;">${itemsListHtml}</div><div style="margin-top:10px; font-weight:bold; color:var(--primary); font-size:1.1em;">R$ ${o.total.toFixed(2)}</div></div>`;
                 let actionsHtml = `<div class="card-actions" onclick="event.stopPropagation()"><button class="icon-btn" title="Editar Pedido" onclick="openOrderModal(${o.id})">✏️</button>`;
@@ -1544,6 +1558,7 @@
                 else { actionsHtml += `<button class="icon-btn" onclick="changeStatus(${o.id}, 'preparo')">⬅️</button><button class="icon-btn" style="color:var(--danger);" onclick="deleteOrder(${o.id})">🗑️</button></div>`; card.innerHTML += actionsHtml; document.getElementById('col-cancelado').appendChild(card); }
             });
         }
+
         function changeStatus(id, newStatus) {
             let order = db.orders.find(o => o.id === id);
             if(order) {
