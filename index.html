@@ -346,36 +346,60 @@
                 
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 300px; background: var(--surface); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);">
-                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Estas configurações enviam comandos matemáticos direto para a impressora. Os valores em R$ foram removidos.</p>
+                        <p style="color:#aaa; font-size:0.85em; margin-top:0;">Configurações de pulsos elétricos da impressora térmica Elgin i9.</p>
                         
                         <div class="form-group">
                             <label>Largura da Bobina (mm)</label>
                             <input type="number" id="cfg-print-width" value="80" oninput="updatePrintPreview()">
                             <small style="color:#aaa; display:block; margin-top:5px;">Padrão: 80mm (Aprox. 48 colunas) ou 58mm (32 colunas)</small>
                         </div>
+
+                        <hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">
+                        <h4 style="color: var(--primary); margin: 0 0 10px 0;">Principal (Pizzas/Pratos)</h4>
                         <div class="form-group">
-                            <label>Tamanho do Texto (Multiplicador ESC/POS)</label>
+                            <label>Tamanho do Texto Principal</label>
                             <select id="cfg-print-size" onchange="updatePrintPreview()">
-                                <option value="0">1x - Normal (Tamanho Padrão)</option>
-                                <option value="1">2x Altura (Mais alto, mas mesma largura)</option>
-                                <option value="16">2x Largura (Mais largo, mesma altura)</option>
-                                <option value="17">2x Completo (Dobro de Altura e Largura)</option>
+                                <option value="0">1x - Normal (Padrão)</option>
+                                <option value="1">2x Altura</option>
+                                <option value="16">2x Largura</option>
+                                <option value="17">2x Completo (Altura e Largura)</option>
                                 <option value="34">3x Completo (Gigante)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Tipo de Fonte Fina/Larga (Chip Interno)</label>
+                            <label>Tipo de Fonte (Principal)</label>
                             <select id="cfg-print-font" onchange="updatePrintPreview()">
-                                <option value="0">Fonte A (Padrão - Mais Larga)</option>
+                                <option value="0">Fonte A (Mais Larga)</option>
                                 <option value="1">Fonte B (Condensada - Mais Fina)</option>
                             </select>
                         </div>
-                        <div class="checkbox-item" style="margin-top: 20px;">
+
+                        <hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">
+                        <h4 style="color: #ffb100; margin: 0 0 10px 0;">Modificadores (Adicionais/Retiradas)</h4>
+                        <div class="form-group">
+                            <label>Tamanho do Texto Modificador</label>
+                            <select id="cfg-mod-size" onchange="updatePrintPreview()">
+                                <option value="0">1x - Normal (Recomendado)</option>
+                                <option value="1">2x Altura</option>
+                                <option value="16">2x Largura</option>
+                                <option value="17">2x Completo</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Fonte (Modificadores)</label>
+                            <select id="cfg-mod-font" onchange="updatePrintPreview()">
+                                <option value="0">Fonte A</option>
+                                <option value="1" selected>Fonte B (Mais Fina e Evidente)</option>
+                            </select>
+                        </div>
+
+                        <hr style="border:0; border-top:1px dashed var(--border); margin:15px 0;">
+                        <div class="checkbox-item" style="margin-top: 15px;">
                             <input type="checkbox" id="cfg-print-bold" onchange="updatePrintPreview()">
                             <label for="cfg-print-bold">Forçar Texto Inteiro em Negrito</label>
                         </div>
                         
-                        <button class="btn-success" style="width: 100%; margin-top: 20px;" onclick="savePrintConfig()">SALVAR CONFIGURAÇÃO RAW</button>
+                        <button class="btn-success" style="width: 100%; margin-top: 20px;" onclick="savePrintConfig()">SALVAR CONFIGURAÇÃO</button>
                     </div>
 
                     <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; align-items: flex-start; background: #fff; padding: 20px; border-radius: var(--radius); overflow-x: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
@@ -386,7 +410,9 @@
             </div>
         </div>
 
-    </div> <div id="order-modal" class="modal-overlay">
+    </div> 
+
+    <div id="order-modal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeOrderModal()">&times;</span>
             
@@ -513,7 +539,6 @@
                 { name: 'Bebidas', imprimeCozinha: false }
             ],
             products: [],
-            // Modificadores ganham a propriedade "imprimeCozinha" por padrão (blindagem)
             modifiers: [], 
             orders: [],
             tables: ['Mesa 01', 'Mesa 02', 'Mesa 03', 'Mesa Preta 01', 'Mesa Quadrada 01', 'Balcão'],
@@ -521,7 +546,8 @@
             profiles: [],
             users: [],
             shiftOpen: false,
-            printConfig: { width: 80, fontSize: "0", fontFamily: "0", bold: false }
+            // Armazena a configuração de ambos (Principal e Modificadores) separadamente
+            printConfig: { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "0", modFontFamily: "1", bold: false }
         };
 
         let currentSessionUser = null;
@@ -644,7 +670,7 @@
             
             db.modifiers.forEach(m => {
                 if (!m.type) m.type = 'addon';
-                if (typeof m.imprimeCozinha === 'undefined') m.imprimeCozinha = true; // Por padrão imprime
+                if (typeof m.imprimeCozinha === 'undefined') m.imprimeCozinha = true;
             });
 
             if (db.categories && db.categories.length > 0) {
@@ -663,7 +689,13 @@
             }
 
             if (typeof db.shiftOpen === 'undefined') db.shiftOpen = false;
-            if (!db.printConfig) db.printConfig = { width: 80, fontSize: "0", fontFamily: "0", bold: false };
+            
+            if (!db.printConfig) {
+                db.printConfig = { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "0", modFontFamily: "1", bold: false };
+            } else {
+                if (!db.printConfig.modFontSize) db.printConfig.modFontSize = "0";
+                if (!db.printConfig.modFontFamily) db.printConfig.modFontFamily = "1";
+            }
             
             if (!db.profiles || db.profiles.length === 0) {
                 db.profiles = [
@@ -876,7 +908,7 @@
 
         function renderAdminDashboard() {
             const area = document.getElementById('admin-list-area'); area.innerHTML = '';
-            if (activeAdminTabIsProfile()) { // protective call
+            if (activeAdminTab === 'profiles') {
                 db.profiles.forEach(p => {
                     area.innerHTML += `<div class="menu-item-card"><div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">${p.perms.length} permissões</span></div><div class="item-actions"><button onclick="openAdminForm('profile', ${p.id})">Editar</button>${p.id !== 1 ? `<button class="btn-delete" onclick="deleteProfile(${p.id})">Excluir</button>` : ''}</div></div>`;
                 });
@@ -887,8 +919,6 @@
                 });
             }
         }
-        
-        function AdminTabIsProfile() { return activeAdminTab === 'profiles'; }
 
         function openAdminForm(type = activeAdminTab.slice(0,-1), id = null) {
             const modal = document.getElementById('mini-modal'); const body = document.getElementById('mini-modal-body'); const footer = document.getElementById('mini-modal-footer');
@@ -996,7 +1026,7 @@
             } else if (activeMenuTab === 'products') {
                 db.products.forEach(p => {
                     let thumb = p.image ? `<img src="${p.image}" style="width:45px; height:45px; object-fit:cover; border-radius:6px; margin-right:15px; background:var(--bg);" onerror="this.style.display='none'">` : `<div style="width:45px; height:45px; border-radius:6px; margin-right:15px; background:var(--bg); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; font-size:0.6em; color:#555;">S/ img</div>`;
-                    area.innerHTML += `<div class="menu-item-card" onclick="viewProductDetails(${p.id})"><div style="display:flex; align-items:center;">${thumb}<div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">R$ ${p.price.toFixed(2)}</span></div></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openProductForm(${p.id})">Editar</button><button onclick="duplicateProduct(${p.id})">Duplicar</button><button class="btn-delete" onclick="deleteProduct(${p.id})">Excluir</button></div></div>`;
+                    area.innerHTML += `<div class="menu-item-card" onclick="viewProductDetails(p.id)"><div style="display:flex; align-items:center;">${thumb}<div class="item-info"><span class="item-title">${p.name}</span><span class="item-subtitle">R$ ${p.price.toFixed(2)}</span></div></div><div class="item-actions" onclick="event.stopPropagation()"><button onclick="openProductForm(${p.id})">Editar</button><button onclick="duplicateProduct(${p.id})">Duplicar</button><button class="btn-delete" onclick="deleteProduct(${p.id})">Excluir</button></div></div>`;
                 });
             } else if (activeMenuTab === 'modifiers') {
                 if(!db.modifiers) db.modifiers = [];
@@ -1010,7 +1040,6 @@
             }
         }
 
-        // Permite ligar/desligar se o modificador sai na comanda clicando no card dele na gestão
         function openModifierSettingModal(modId) {
             let m = db.modifiers.find(x => x.id === modId);
             if (!m) return;
@@ -1020,11 +1049,10 @@
                 renderMenuDashboard();
             }, `Configurar Impressão: ${m.name}`);
             
-            // Adiciona botão customizado para desligar no diálogo de confirmação
             document.getElementById('dialog-buttons').innerHTML = `
                 <button onclick="closeSystemDialog()" style="padding: 10px 15px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; flex: 1;">Cancelar</button>
-                <button style="background:var(--danger); color:white; border:none; padding:10px; border-radius:var(--radius); font-weight:bold; cursor:pointer; flex:1;" onclick="let mObj = db.modifiers.find(x => x.id === ${modId}); if(mObj) mObj.imprimeCozinha = false; saveDb(); closeSystemDialog(); renderMenuDashboard();">NÃO IMPRIMIR</button>
-                <button class="btn-success" style="flex: 1;" onclick="let mObj = db.modifiers.find(x => x.id === ${modId}); if(mObj) mObj.imprimeCozinha = true; saveDb(); closeSystemDialog(); renderMenuDashboard();">IMPRIMIR</button>
+                <button style="background:var(--danger); color:white; border:none; padding:10px; border-radius:var(--radius); font-weight:bold; cursor:pointer; flex:1;" onclick="let mObj = db.modifiers.find(x => x.id === ${modId}); if(mObj) mObj.imprimeCozinha = false; saveDb(); closeSystemDialog(); renderMenuDashboard();">Ocultar na Cozinha</button>
+                <button class="btn-success" style="flex: 1;" onclick="let mObj = db.modifiers.find(x => x.id === ${modId}); if(mObj) mObj.imprimeCozinha = true; saveDb(); closeSystemDialog(); renderMenuDashboard();">Imprimir na Cozinha</button>
             `;
         }
         
@@ -1100,7 +1128,7 @@
             const modal = document.getElementById('mini-modal'); let p = productId ? db.products.find(x => x.id === productId) : null; let currentCats = p ? (p.categories || []) : [];
             let checkboxesHtml = db.categories.map(c => `
                 <div class="checkbox-item">
-                    <input type="checkbox" id="cat-${c.name}" value="${c.name}" ${currentCats.includes(c.name) ? 'checked' : ''}>
+                    <input type="checkbox" id="cat-${c.name}" value="${c.name}" ${letCats.includes(c.name) ? 'checked' : ''}>
                     <label for="cat-${c.name}">${c.name}</label>
                 </div>`).join('');
             
@@ -1114,6 +1142,7 @@
             document.getElementById('mini-modal-footer').innerHTML = `<button class="btn-success" onclick="saveProduct(${productId})">Salvar</button>`;
             modal.style.display = 'block';
         }
+        function formatCurrencyMask(input) { let value = input.value.replace(/\D/g, ''); if (value === '') { input.value = ''; return; } value = (parseInt(value, 10) / 100).toFixed(2); input.value = value.replace('.', ','); }
         function saveProduct(productId) {
             let name = document.getElementById('modal-p-name').value.trim(); let price = parseFloat(document.getElementById('modal-p-price').value.replace(',', '.')); let image = document.getElementById('modal-p-image').value.trim(); let checkedCats = [];
             db.categories.forEach(c => { if(document.getElementById(`cat-${c.name}`).checked) checkedCats.push(c.name); });
@@ -1184,10 +1213,12 @@
 
         // --- IMPRESSÃO CONFIG ---
         function loadPrintConfig() {
-            let cfg = db.printConfig || { width: 80, fontSize: "0", fontFamily: "0", bold: false };
+            let cfg = db.printConfig || { width: 80, fontSize: "0", fontFamily: "0", modFontSize: "0", modFontFamily: "1", bold: false };
             document.getElementById('cfg-print-width').value = cfg.width;
             document.getElementById('cfg-print-size').value = cfg.fontSize;
             document.getElementById('cfg-print-font').value = cfg.fontFamily;
+            document.getElementById('cfg-mod-size').value = cfg.modFontSize || "0";
+            document.getElementById('cfg-mod-font').value = cfg.modFontFamily || "1";
             document.getElementById('cfg-print-bold').checked = cfg.bold;
             updatePrintPreview();
         }
@@ -1195,7 +1226,9 @@
         function updatePrintPreview() {
             let width = document.getElementById('cfg-print-width').value || 80;
             let sizeChoice = document.getElementById('cfg-print-size').value; 
-            let fontChoice = document.getElementById('cfg-print-font').value; 
+            let fontChoice = document.getElementById('cfg-print-font').value;
+            let modSize = document.getElementById('cfg-mod-size').value;
+            let modFont = document.getElementById('cfg-mod-font').value;
             let isBold = document.getElementById('cfg-print-bold').checked;
 
             let preview = document.getElementById('print-preview-container');
@@ -1208,6 +1241,10 @@
             if (sizeChoice === "16") { cssTransform = 'scaleX(2)'; cssMargin = '0 10%'; }
             if (sizeChoice === "17") { cssTransform = 'scale(2)'; cssMargin = '20px 0'; }
             if (sizeChoice === "34") { cssTransform = 'scale(3)'; cssMargin = '30px 0'; }
+
+            // Visualmente deixamos o modificador menor e fino para representar o tamanho normal/fino
+            let modTransform = modSize === "17" ? 'scale(1.2)' : 'scale(0.9)';
+            let modLetterSpacing = modFont === "1" ? '-1.5px' : '0px';
 
             preview.style.width = width + 'mm';
             
@@ -1225,6 +1262,8 @@
                     <div style="transform:${cssTransform}; transform-origin: left; margin:${cssMargin};">
                         <strong>ITENS DA COZINHA:</strong><br>
                         <strong>- Pizza Calabresa</strong><br>
+                    </div>
+                    <div style="transform:${modTransform}; letter-spacing:${modLetterSpacing}; transform-origin: left; margin-left:15px; font-weight:lighter;">
                         &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--danger);">- Sem cebola</span><br>
                         &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--primary);">+ Com catupiry</span><br>
                     </div>
@@ -1239,13 +1278,15 @@
                 width: parseInt(document.getElementById('cfg-print-width').value) || 80,
                 fontSize: document.getElementById('cfg-print-size').value, 
                 fontFamily: document.getElementById('cfg-print-font').value,
+                modFontSize: document.getElementById('cfg-mod-size').value,
+                modFontFamily: document.getElementById('cfg-mod-font').value,
                 bold: document.getElementById('cfg-print-bold').checked
             };
             saveDb();
             showCustomAlert("Configurações RAW salvas com sucesso!", "Sucesso");
         }
 
-        // --- MOTOR DE IMPRESSÃO VIA QZ TRAY ---
+        // --- MOTOR DE IMPRESSÃO VIA QZ TRAY (COM TAMANHO DIFERENCIADO PARA MODS) ---
         function printTicket(order) {
             if (typeof qz === 'undefined') {
                 showCustomAlert("A biblioteca do QZ Tray não carregou. Verifique sua internet.", "Erro Interno");
@@ -1278,12 +1319,26 @@
                 
                 var pCfg = db.printConfig || {};
                 var isBold = pCfg.bold ? '\x01' : '\x00';
+                
+                // Configuração Produto/Principal
                 var fontSizeHex = String.fromCharCode(parseInt(pCfg.fontSize || "0"));
                 var fontFamilyHex = String.fromCharCode(parseInt(pCfg.fontFamily || "0"));
+
+                // Configuração Modificadores
+                var modFontSizeHex = String.fromCharCode(parseInt(pCfg.modFontSize || "0"));
+                var modFontFamilyHex = String.fromCharCode(parseInt(pCfg.modFontFamily || "1"));
 
                 var CUSTOM_BOLD = ESC + '\x45' + isBold;
                 var CUSTOM_SIZE = GS + '\x21' + fontSizeHex;
                 var CUSTOM_FONT = ESC + '\x4D' + fontFamilyHex;
+
+                // Comandos específicos para diminuir os modificadores
+                var SET_MOD_FONT = ESC + '\x4D' + modFontFamilyHex;
+                var SET_MOD_SIZE = GS + '\x21' + modFontSizeHex;
+                
+                // Retorna para a fonte e tamanho configurados para o item principal
+                var RESTORE_FONT = ESC + '\x4D' + fontFamilyHex;
+                var RESTORE_SIZE = GS + '\x21' + fontSizeHex;
 
                 var BOLD_ON = ESC + '\x45' + '\x01';
                 var BOLD_OFF = ESC + '\x45' + '\x00';
@@ -1319,19 +1374,26 @@
                         return catObj && catObj.imprimeCozinha === true;
                     });
 
-                    if (deveImprimeItem(i)) { // Utiliza função de segurança unificada
+                    if (deveImprimeItem(i)) {
                         itensImpressosCount++;
-                        data.push(BOLD_ON, '- ' + i.name + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF));
+                        // Imprime o item principal com o tamanho configurado no painel
+                        data.push(RESTORE_SIZE, RESTORE_FONT, BOLD_ON, '- ' + i.name + LF, (pCfg.bold ? BOLD_ON : BOLD_OFF));
                         
                         if (i.modifiers && i.modifiers.length > 0) {
+                            // Aplica o tamanho menor, fonte fina e zera negrito para os modificadores
+                            data.push(SET_MOD_FONT, SET_MOD_SIZE, BOLD_OFF);
+                            
                             i.modifiers.forEach(function(m) {
-                                // Verifica explicitamente se o modificador está habilitado para impressão
                                 let modEntity = db.modifiers.find(x => x.id === m.id || x.name === m.name);
                                 if (!modEntity || modEntity.imprimeCozinha !== false) {
                                     var prefix = m.type === 'exclusion' ? '  - ' : '  + ';
                                     data.push('    ' + prefix + m.name + LF);
                                 }
                             });
+                            
+                            // Restaura as configurações do item principal para a próxima linha
+                            data.push(RESTORE_SIZE, RESTORE_FONT);
+                            if (pCfg.bold) data.push(BOLD_ON);
                         }
                         if (i.obs) {
                             data.push('    Obs: ' + i.obs + LF);
