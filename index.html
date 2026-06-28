@@ -977,7 +977,7 @@
         }
         function selectPdvPayment(payment) { document.getElementById('pdv-payment').value = payment; document.getElementById('btn-pdv-payment').firstElementChild.innerText = payment; closeMiniModal(); }
 
-        function formatCurrencyMask(input) { let value = input.value.replace(/\D/g, ''); if (value === '') { input.value = ''; return; } value = (parseInt(value, 10) / 100).toFixed(2); input.value = value.replace('.', ','); }
+        function formatCurrencyMask(input) { let v = input.value.replace(/\D/g,''); v = (parseInt(v)||0)/100; input.value = v > 0 ? v.toFixed(2).replace('.',',') : ''; } // simplificado
 
         // --- GESTÃO DE CARDÁPIO ---
         function renderMenuDashboard() {
@@ -1090,6 +1090,7 @@
             document.getElementById('mini-modal-footer').innerHTML = `<button class="btn-success" onclick="saveProduct(${productId})">Salvar</button>`;
             modal.style.display = 'block';
         }
+        function formatCurrencyMask(input) { let value = input.value.replace(/\D/g, ''); if (value === '') { input.value = ''; return; } value = (parseInt(value, 10) / 100).toFixed(2); input.value = value.replace('.', ','); }
         function saveProduct(productId) {
             let name = document.getElementById('modal-p-name').value.trim(); let price = parseFloat(document.getElementById('modal-p-price').value.replace(',', '.')); let image = document.getElementById('modal-p-image').value.trim(); let checkedCats = [];
             db.categories.forEach(c => { if(document.getElementById(`cat-${c.name}`).checked) checkedCats.push(c.name); });
@@ -1330,7 +1331,7 @@
             
             cancelModifierSelection();
             
-            document.getElementById('order-modal').style.display = 'block'; currentSearchTerm = ''; document.getElementById('pdv-search').value = ''; renderPdvCategories();
+            document.getElementById('order-modal').style.display = 'block'; currentTerm = ''; document.getElementById('pdv-search').value = ''; renderPdvCategories();
             const btnFinalize = document.getElementById('btn-finalize-order'); const modalTitle = document.getElementById('order-modal-title');
             if (orderId) {
                 editingOrderId = orderId; let order = db.orders.find(o => o.id === orderId);
@@ -1350,7 +1351,12 @@
         }
 
         function closeOrderModal() { document.getElementById('order-modal').style.display = 'none'; editingOrderId = null; }
-        function searchPdvProducts(term) { currentSearchTerm currentSearchTerm = term; currentSearchTerm = term.toLowerCase(); filterPdvProducts(term); } // Ajustado bug de sintaxe
+        
+        // Correção realizada aqui
+        function searchPdvProducts(term) { 
+            currentTerm = term.toLowerCase(); 
+            filterPdvProducts(currentCategoryFilter); 
+        }
         
         function renderPdvCategories() {
             const div = document.getElementById('pdv-categories'); 
@@ -1363,7 +1369,7 @@
             currentCategoryFilter = cat; const div = document.getElementById('pdv-products'); div.innerHTML = '';
             let prods = db.products;
             if (cat !== '') prods = prods.filter(p => (p.categories || []).includes(cat));
-            if (currentSearchTerm !== '') prods = prods.filter(p => p.name.toLowerCase().includes(currentTerm)); // Correção da variável
+            if (currentTerm !== '') prods = prods.filter(p => p.name.toLowerCase().includes(currentTerm));
             prods.forEach(p => {
                 let img = p.image ? `<img src="${p.image}" onerror="this.style.display='none';">` : `<div class="no-image">S/ Imagem</div>`;
                 div.innerHTML += `<div class="product-card"><div class="product-main-click" onclick="addToCart(${p.id})">${img}<div style="flex-grow:1; display:flex; flex-direction:column; justify-content:flex-end;"><div class="product-card-title">${p.name}</div><div class="product-card-price">R$ ${p.price.toFixed(2)}</div></div></div><div class="modifier-btn" title="Adicionar Observação/Modificador" onclick="openModifierSelection(${p.id}, event)">⚙️</div></div>`;
