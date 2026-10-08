@@ -1,0 +1,74 @@
+/* Partigiana HUB v1.1 — filtro multicategoria e contador de produção.
+   Estilos limitados ao KDS de produção para preservar Kanban, Salão e PDV. */
+#kds-view .kds-toolbar{position:relative;z-index:20;gap:7px;overflow:visible}
+#kds-view .kds-stage{z-index:1}
+#kds-view .kds-categories-wrapper{position:relative;flex:0 0 auto;min-width:0}
+#kds-view .kds-category-trigger{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  border:1px solid #9acbb7;background:#e7f5ed;color:#075d44;
+  border-radius:9px;padding:7px 12px;min-height:36px;
+  font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;
+}
+#kds-view .kds-category-trigger:hover,
+#kds-view .kds-category-trigger[aria-expanded="true"]{background:#d8f0e4;border-color:#078963;box-shadow:0 0 0 2px #d4efdf}
+#kds-view .kds-category-panel{
+  position:absolute;top:calc(100% + 8px);left:0;z-index:200;
+  width:min(355px,calc(100vw - 36px));max-height:min(470px,calc(100dvh - 165px));
+  padding:14px;background:#fffefb;border:1px solid #cbded4;border-radius:14px;
+  box-shadow:0 18px 48px rgba(25,64,47,.20);
+  display:flex;flex-direction:column;gap:9px;color:#244438;
+}
+#kds-view .kds-category-panel[hidden]{display:none!important}
+#kds-view .kds-category-title{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:850}
+#kds-view .kds-category-title button{background:#f5f6f1;border:1px solid #dce6df;border-radius:7px;color:#43665a;padding:4px 9px;cursor:pointer}
+#kds-view .kds-category-panel p{font-size:12px;line-height:1.45;color:#617569;margin:0}
+#kds-view .kds-category-options{display:flex;flex-direction:column;gap:6px;overflow-y:auto;min-height:0;max-height:292px;padding:2px 2px 3px}
+#kds-view .kds-category-option{
+  display:flex;align-items:center;gap:10px;padding:10px 11px;
+  border:1px solid #e0e8e1;border-radius:9px;background:#f9faf7;
+  cursor:pointer;font-size:13px;font-weight:650;transition:background-color .12s,border-color .12s;
+}
+#kds-view .kds-category-option:hover{border-color:#85c6a8}
+#kds-view .kds-category-option.selected{background:#e0f5e9;border-color:#078963;color:#075b44;box-shadow:inset 3px 0 0 #078963}
+#kds-view .kds-category-option input{width:18px;height:18px;accent-color:#078963;margin:0;flex:none;cursor:pointer}
+#kds-view .kds-category-name{flex:1;min-width:0;overflow-wrap:anywhere}
+#kds-view .kds-category-check{color:#078963;font-size:17px;font-weight:900}
+#kds-view .kds-category-actions{display:flex;gap:9px;border-top:1px solid #e6eee8;padding-top:10px}
+#kds-view .kds-category-actions button{flex:1;min-height:37px;font-size:12px;padding:6px 9px}
+#kds-view .kds-pizza-counter{
+  display:flex;align-items:center;gap:8px;min-height:38px;
+  background:#fff1df;border:2px solid #f4a45b;border-radius:10px;
+  box-shadow:0 2px 8px rgba(168,86,20,.12);padding:4px 10px;
+  color:#86400a;white-space:nowrap;
+}
+#kds-view .kds-pizza-counter[hidden]{display:none!important}
+#kds-view .kds-pizza-symbol{font-size:19px;line-height:1}
+#kds-view .kds-pizza-label{font-size:12px;line-height:1.15;font-weight:850}
+#kds-view .kds-pizza-counter strong{
+  color:#a94a09;font-size:25px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;
+  background:#fffdfa;border-radius:7px;min-width:34px;text-align:center;padding:3px 6px;
+}
+#kds-view .kds-dashboard{gap:5px}
+#kds-view .kds-stat{padding:5px 7px}
+#kds-view .kds-page-summary{font-size:11px}
+@media(max-width:1250px){
+ #kds-view .kds-pizza-label{font-size:11px}
+ #kds-view .kds-stat label{font-size:10px}
+ #kds-view .kds-toolbar{gap:5px}
+}
+@media(max-width:1000px){
+ #kds-view .kds-dashboard{flex-wrap:wrap}
+ #kds-view .kds-pizza-counter{padding:3px 7px}
+ #kds-view .kds-pizza-counter strong{font-size:20px}
+}
+@media(max-width:600px){
+ #kds-view .kds-category-panel{width:min(330px,calc(100vw - 24px));max-height:min(430px,calc(100dvh - 170px))}
+ #kds-view .kds-category-trigger{padding:6px 8px;min-height:32px}
+ #kds-view .kds-pizza-counter{min-height:32px}
+ #kds-view .kds-pizza-symbol{font-size:16px}
+ #kds-view .kds-pizza-label{font-size:10px}
+ #kds-view .kds-pizza-counter strong{font-size:18px}
+}
+
+#kds-view .kds-category-error{padding:7px 9px;background:#fff0ed;color:#a53024;border:1px solid #f4c8be;border-radius:7px;font-size:12px;font-weight:700}
+#kds-view .kds-category-error[hidden]{display:none!important}

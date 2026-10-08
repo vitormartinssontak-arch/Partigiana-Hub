@@ -1,0 +1,98 @@
+/* Partigiana HUB v0.9 — baixa manual do KDS, relógios e botão fechar do PDV */
+/* O botão X mantém posição no canto superior da janela, independente de rolagem. */
+#order-modal .modal-content{position:relative}
+#order-modal .modal-content>.pdv-close-emphasis{
+  position:absolute!important;top:12px!important;right:12px!important;left:auto!important;
+  z-index:1600!important;display:grid;place-items:center;
+  width:34px;height:34px;line-height:1;border:1px solid #e7b7b5;
+  border-radius:10px;background:#fff2ef;color:#a73436;font-size:23px;
+  font-family:inherit;font-weight:700;cursor:pointer;
+  box-shadow:0 2px 10px rgba(126,55,48,.09);
+  transition:background .15s,transform .15s!important;
+}
+#order-modal .modal-content>.pdv-close-emphasis:hover{background:#ffe4e0;transform:scale(1.04)}
+#order-modal .modal-content>.pdv-close-emphasis:focus-visible{outline:3px solid #ec9c92;outline-offset:2px}
+#order-modal .pdv-right{padding-top:54px!important}
+#order-modal .pdv-left{padding-top:13px!important}
+@media(max-width:700px){#order-modal .pdv-right{padding-top:50px!important}}
+
+/* Dois relógios em Entregues: criação em cima, entrega embaixo. */
+#kanban-view .kanban-double-timer{display:flex;flex-direction:column;gap:4px;flex:none;align-items:flex-end}
+#kanban-view .kanban-double-timer .time-tracker{white-space:nowrap;font-size:11px!important;padding:3px 5px!important}
+/* Remover avisos redundantes: scrollbar fina continua visível no cartão. */
+#kanban-view .kanban-scroll-cue,#kds-view .kds-overflow-cue{display:none!important}
+
+#kds-view .kds-stock-open{
+  background:#e4f5eb;border:1px solid #98d8b9;color:#075b41;
+  border-radius:9px;min-height:32px;padding:6px 11px;font-size:12px;font-weight:800;
+  cursor:pointer;white-space:nowrap;
+}
+#kds-view .kds-stock-open:hover{background:#d4eedf;border-color:#48b88f}
+#kds-view .kds-stock-open:focus-visible{outline:3px solid #8ad1b1;outline-offset:2px}
+
+.kds-stock-overlay,.kds-stock-quantity-overlay{
+  position:fixed;inset:0;z-index:8500;background:rgba(19,40,35,.57);
+  display:flex;justify-content:center;align-items:center;padding:16px;
+  backdrop-filter:blur(3px);color:#183b31;
+}
+.kds-stock-overlay[hidden],.kds-stock-quantity-overlay[hidden]{display:none!important}
+.kds-stock-dialog{
+  display:flex;flex-direction:column;width:min(1120px,97vw);height:min(790px,92dvh);
+  min-width:0;min-height:0;overflow:hidden;background:#fffefa;border-radius:18px;
+  box-shadow:0 18px 65px rgba(4,30,20,.28);border:1px solid #d6e6dc;
+}
+.kds-stock-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:19px 23px 13px;border-bottom:1px solid #e5ede6}
+.kds-stock-head h2{font-size:22px;margin:0;color:#153c30}
+.kds-stock-head p{margin:4px 0 0;font-size:12px;color:#748579}
+.kds-stock-close{display:grid;place-items:center;width:35px;height:35px;border:1px solid #ebcdcb;border-radius:10px;background:#fff4f1;color:#ad4650;font-weight:800;cursor:pointer}
+.kds-stock-close:hover{background:#ffe7e2}
+.kds-stock-body{min-height:0;flex:1;display:grid;grid-template-columns:235px minmax(0,1fr)}
+.kds-stock-sidebar{display:flex;flex-direction:column;gap:7px;min-height:0;overflow-y:auto;background:#f4f7f2;padding:18px;border-right:1px solid #dfebdf}
+.kds-stock-section,.kds-stock-category{color:#26463c;text-align:left;cursor:pointer;border-radius:10px;border:1px solid transparent;padding:12px 13px;font-weight:750;background:transparent;font-size:13px}
+.kds-stock-section:hover,.kds-stock-category:hover{background:#e8f5e9}
+.kds-stock-section.active,.kds-stock-category.active{background:#dff4e9;border-color:#8ed4b0;color:#075b41}
+.kds-stock-categories{display:flex;flex-direction:column;gap:4px;padding:5px 0 0 13px}
+.kds-stock-category{padding:9px 11px;font-weight:650;font-size:12px}
+.kds-stock-results{min-height:0;min-width:0;display:flex;flex-direction:column;padding:18px 22px 12px}
+.kds-stock-search input{width:100%;padding:13px 15px;border-radius:10px;border:1px solid #ccdbd1;color:#173c30;background:#fff;outline:none}
+.kds-stock-search input:focus{border-color:#15976c;box-shadow:0 0 0 3px #d9f2e6}
+.kds-stock-results-title{font-size:13px;color:#6c8075;font-weight:700;margin:17px 0 13px}
+.kds-stock-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px;overflow-y:auto;min-height:0;align-content:start;padding:3px 5px 12px 0;scrollbar-width:thin}
+.kds-stock-product{min-height:135px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;gap:8px;padding:15px;background:#fff;border:1px solid #dce7dd;border-radius:13px;cursor:pointer;color:#173c30;box-shadow:0 2px 7px rgba(27,68,46,.05)}
+.kds-stock-product:hover{border-color:#12926e;background:#f4fbf6;transform:translateY(-2px)}
+.kds-stock-product-icon{font-size:24px}
+.kds-stock-product strong{font-size:14px;overflow-wrap:anywhere}
+.kds-stock-product small{font-size:12px;color:#677f70}
+.kds-stock-no-recipe small{color:#b16020}
+.kds-stock-empty{grid-column:1/-1;color:#6a7e72;padding:28px 10px}
+.kds-stock-foot{border-top:1px solid #e4ece5;padding:11px 22px;font-size:12px;color:#698072;background:#f7faf6}
+
+.kds-stock-quantity-overlay{z-index:8600}
+.kds-stock-quantity-box{display:flex;flex-direction:column;gap:9px;width:min(520px,95vw);max-height:90dvh;overflow:auto;padding:22px 24px;background:#fffefa;border:1px solid #deeadf;border-radius:17px;box-shadow:0 20px 65px #102c2244}
+.kds-stock-quantity-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.kds-stock-quantity-top h3{margin:0;font-size:20px;color:#193d32}
+.kds-stock-qty-name{font-size:17px;font-weight:800;margin:5px 0 0;color:#173d32}
+.kds-stock-qty-current{font-size:13px;color:#667e70;margin:0 0 6px}
+.kds-stock-quantity-box label{font-size:12px;font-weight:750;color:#33574a;margin:5px 0 0}
+.kds-stock-quantity-box>input,.kds-stock-quantity-box select,.kds-stock-qty-input-row input{background:#fff;border:1px solid #cfdbd1;border-radius:9px;padding:12px;color:#173b2c;width:100%;font:inherit}
+.kds-stock-qty-input-row{display:flex;align-items:center;gap:8px}
+.kds-stock-qty-input-row input{flex:1;min-width:0;font-weight:750;font-size:19px}
+.kds-stock-qty-input-row strong{border-radius:8px;background:#e5f4ea;padding:12px;color:#075c43;min-width:45px;text-align:center}
+.kds-stock-qty-usage{margin:8px 0 4px;border:1px solid #dceade;border-radius:10px;background:#f5faf5;padding:12px;font-size:13px;color:#285244}
+.kds-stock-impact{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #dce8de}
+.kds-stock-impact:last-child{border:0}
+.kds-stock-impact strong{color:#b44844;white-space:nowrap}
+.kds-stock-error{color:#b4363b;margin:4px 0;font-weight:750}
+.kds-stock-quantity-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:9px}
+.kds-stock-quantity-actions button{font-size:13px;min-height:40px}
+@media(max-width:720px){
+  #kds-view .kds-stock-open{padding:5px 6px;font-size:10px}
+  .kds-stock-dialog{height:95dvh}
+  .kds-stock-body{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .kds-stock-sidebar{flex-direction:row;flex-wrap:wrap;align-content:center;max-height:125px;overflow-y:auto;border:0;border-bottom:1px solid #dfebdf;padding:9px;gap:3px}
+  .kds-stock-categories{flex-direction:row;flex-wrap:wrap;padding:2px;gap:2px}
+  .kds-stock-section,.kds-stock-category{padding:8px 9px;font-size:11px}
+  .kds-stock-head{padding:11px 13px}.kds-stock-head h2{font-size:17px}
+  .kds-stock-results{padding:9px 13px}.kds-stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kds-stock-product{min-height:105px;padding:10px}
+}

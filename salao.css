@@ -1,0 +1,173 @@
+/* PARTIGIANA HUB v0.7 — Somente visualização do KDS.
+   Demais módulos e layout mantidos. */
+body:has(#salao-view.active){overflow:hidden}
+#salao-view.active{
+  height:calc(100dvh - 76px);
+  max-height:calc(100dvh - 76px);
+  min-height:0;
+  padding:8px 14px 10px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+#salao-view:fullscreen,
+#salao-view.active:fullscreen{
+  width:100vw;height:100dvh;max-height:100dvh;
+  background:var(--bg)!important;
+  padding:9px 15px 12px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+#salao-view .kds-top {flex:0 0 auto;min-height:36px;margin:0;gap:9px;flex-wrap:nowrap}
+#salao-view .kds-heading{margin:0;font-size:20px;line-height:1.18;font-weight:800}
+#salao-view .kds-sub{display:none}
+#salao-view .kds-controls{gap:6px;flex-wrap:nowrap}
+#salao-view .kds-controls .btn-home{padding:6px 10px;font-size:12px;border-radius:8px;min-height:32px}
+#salao-view .kds-toolbar{display:flex;flex:0 0 auto;align-items:center;gap:10px;min-height:38px;flex-wrap:wrap}
+#salao-view .kds-stations,#salao-view .kds-browse {display:flex;align-items:center;gap:5px;margin:0;flex-wrap:nowrap}
+#salao-view .kds-station,#salao-view .kds-tab{
+  padding:7px 10px;font-size:12px;white-space:nowrap;border-radius:9px;min-height:32px;
+}
+#salao-view .kds-dashboard {display:flex;align-items:center;gap:6px;margin:0;min-width:0}
+#salao-view .kds-stat{
+  display:flex;align-items:center;gap:5px;padding:6px 9px;
+  border-radius:9px;box-shadow:none;white-space:nowrap;
+  min-width:0;flex-direction:row;
+}
+#salao-view .kds-stat label{font-size:11px;line-height:1.1;white-space:nowrap}
+#salao-view .kds-stat b{font-size:17px;line-height:1;font-weight:800}
+#salao-view .kds-page-summary{white-space:nowrap;font-size:12px;color:#52695f;font-weight:750;margin-left:auto}
+#salao-view .kds-stage{flex:1 1 0;min-height:0;position:relative;display:flex;overflow:visible}
+#salao-view .kds-board{
+  width:100%;height:100%;min-height:0;
+  display:grid;
+  grid-template-columns:repeat(var(--kds-columns,5),minmax(0,1fr));
+  grid-template-rows:repeat(var(--kds-rows,2),minmax(0,1fr));
+  grid-auto-rows:minmax(0,1fr);
+  align-items:stretch;
+  gap:8px;
+  overflow:hidden;
+}
+#salao-view .kds-card{
+  width:100%;height:100%!important;min-height:0;min-width:0;
+  border-radius:12px;border-top-width:4px;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#salao-view .kds-card-top{padding:8px 10px 3px;gap:5px;min-width:0;align-items:flex-start}
+#salao-view .kds-card-top>div{min-width:0;display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
+#salao-view .kds-ticket{font-size:11px;margin-right:0;white-space:nowrap}
+#salao-view .kds-table{font-size:clamp(13px,1.15vw,17px);line-height:1.2;overflow-wrap:anywhere}
+#salao-view .kds-clock{font-size:11px;padding:4px 6px;border-radius:7px}
+#salao-view .kds-client{font-size:11px;line-height:1.2;padding:0 10px 7px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#salao-view .kds-card-meta{padding:4px 10px;font-size:10px;line-height:1.2}
+#salao-view .kds-items{
+  flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:1px 9px 0;scrollbar-width:thin;
+  overscroll-behavior:contain;touch-action:pan-y;
+}
+#salao-view .kds-item{padding:8px 0;border-bottom:1px solid #edf1eb}
+#salao-view .kds-item-head{gap:6px;align-items:flex-start}
+#salao-view .kds-item-name{font-size:var(--kds-item-font-size,20px);line-height:1.19;flex:1 1 0;min-width:0;overflow-wrap:anywhere}
+#salao-view .kds-check-label{
+  display:flex;align-items:center;justify-content:center;gap:3px;flex:0 0 auto;
+  color:#2c6554;font-size:10px;font-weight:750;cursor:pointer;
+  padding:3px 1px;white-space:nowrap;
+}
+#salao-view .kds-ready-checkbox{
+  width:22px;height:22px;accent-color:#078963;
+  cursor:pointer;flex:none;margin:0;
+}
+#salao-view .kds-mods{margin-top:5px;gap:4px}
+#salao-view .kds-mod{font-size:max(10px,calc(var(--kds-item-font-size,20px) * .63));padding:3px 5px}
+#salao-view .kds-obs{font-size:max(11px,calc(var(--kds-item-font-size,20px) * .67));padding:5px 7px;margin-top:5px}
+#salao-view .kds-all-btn{flex:0 0 auto;margin:4px 9px 7px;width:calc(100% - 18px);padding:7px 6px;min-height:28px;border-radius:8px;font-size:11px}
+#salao-view .kds-overflow-cue{
+  flex:0 0 auto;margin:3px 9px 0;padding:3px 5px;
+  min-height:23px;font-size:10px;border-radius:7px;line-height:1.1;
+}
+#salao-view .kds-overflow-cue[hidden]{display:none!important}
+#salao-view .kds-info{display:none}
+#salao-view .kds-empty{grid-column:1/-1;grid-row:1/-1;align-self:stretch;justify-content:center;padding:18px}
+#salao-view .kds-empty-icon{font-size:32px}
+#salao-view .kds-empty strong{font-size:18px}
+#salao-view .kds-empty p{color:var(--muted);font-size:13px}
+#salao-view .kds-page-arrow{
+  position:absolute;z-index:5;top:50%;transform:translateY(-50%);
+  width:40px;height:68px;display:grid;place-items:center;
+  background:rgba(255,254,251,.97);color:#076e51;
+  border:1px solid #abd9c4;border-radius:12px;
+  font-size:25px;font-weight:850;cursor:pointer;
+  box-shadow:0 5px 20px rgba(19,67,48,.15);
+}
+#salao-view .kds-page-arrow:hover{background:#e1f6e9;border-color:#078963}
+#salao-view .kds-page-arrow[hidden]{display:none!important}
+#salao-view .kds-page-prev{left:-7px}
+#salao-view .kds-page-next{right:-7px}
+/* Opções configuráveis continuam legíveis no painel de administração. */
+.kds-config-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:1120px){
+ #salao-view .kds-toolbar{gap:6px}
+ #salao-view .kds-stat{padding:5px 6px}
+ #salao-view .kds-stat label{font-size:10px}
+}
+@media(max-width:850px){
+ #salao-view .kds-top{min-height:28px}
+ #salao-view .kds-heading{font-size:16px}
+ #salao-view .kds-controls .btn-home{font-size:11px;padding:5px 7px}
+ #salao-view .kds-toolbar{gap:5px}
+ #salao-view .kds-page-summary{font-size:11px}
+ #salao-view .kds-station,#salao-view .kds-tab{padding:5px 7px;font-size:11px}
+ #salao-view .kds-dashboard{flex-wrap:wrap}
+ #salao-view .kds-stat{min-height:25px}
+ #salao-view .kds-check-label span{display:none}
+}
+@media(max-width:600px){
+ #salao-view.active{padding:7px 9px;height:calc(100dvh - 76px)}
+ #salao-view .kds-top{flex-wrap:wrap}
+ #salao-view .kds-toolbar{gap:4px}
+ #salao-view .kds-dashboard{order:4;width:100%;justify-content:space-between}
+ #salao-view .kds-stat{flex:1;justify-content:center}
+ #salao-view .kds-stat label{font-size:9px}
+ #salao-view .kds-page-summary{order:5}
+ #salao-view .kds-card-top{padding:8px 9px}
+ #salao-view .kds-item-name{font-size:var(--kds-item-font-size,20px)}
+ .kds-config-grid{grid-template-columns:1fr}
+}
+/* Evita animação de tamanho/posição ao virar a página ou mudar de dispositivo.
+   O CSS legado aplicava transition:all globalmente. */
+#salao-view,#salao-view *{transition:none!important}
+/* As setas usam uma faixa lateral reservada: não tampam os checkboxes. */
+#salao-view .kds-stage:has(.kds-page-next:not([hidden])) .kds-board{margin-right:44px}
+#salao-view .kds-stage:has(.kds-page-prev:not([hidden])) .kds-board{margin-left:44px}
+#salao-view .kds-page-next{right:0}
+#salao-view .kds-page-prev{left:0}
+/* Bloqueia rolagem da página inteira também nos tamanhos móveis. */
+body:has(#salao-view.active),
+body:has(#salao-view.active) #app-container{height:100dvh;max-height:100dvh;min-height:0;overflow:hidden}
+body:has(#salao-view.active),body:has(#salao-view.active) #app-container{transition:none!important}
+
+/* KDS salão: cor e semântica de entrega; não interfere com a cozinha. */
+#salao-view .kds-card{border-top-color:#168f77}
+#salao-view .salao-item-delivered .kds-item-name{text-decoration:line-through;color:#5c8777}
+#salao-view .salao-readiness{display:inline-block;font-size:10px;font-weight:750;padding:2px 6px;border-radius:6px;margin-top:4px}
+#salao-view .salao-ready{background:#e1f5eb;color:#137a57}
+#salao-view .salao-done{background:#edf2ef;color:#4f7b69}
+#salao-view .salao-waiting{background:#fff1d8;color:#915d11}
+#salao-view .salao-item-description{min-width:0;flex:1 1 0}
+#salao-view .salao-delivery-checkbox{width:22px;height:22px;accent-color:#098b6a;flex:none;margin:0;cursor:pointer}
+#salao-view .salao-all-btn{background:#087e65!important;color:white!important}
+#salao-view .salao-all-btn:hover{background:#066e59!important}
+#salao-view .kds-check-label{gap:3px}
+#salao-view .kds-card-meta{background:#eff6f2;color:#385c50}
+#salao-view .kds-top .btn-home{white-space:nowrap}
+#app-container>header .header-salao{background:#eef7f2;color:#12654f;border:1px solid #cbe7d9;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:780;white-space:nowrap}
+#app-container>header .header-salao:hover{background:#daefe4}
+@media(max-width:1090px){#app-container>header .hub-brand{display:none}}
+@media(max-width:760px){
+ #app-container>header .header-salao{padding:6px;font-size:10px}
+ #app-container>header .header-left{gap:4px}
+ #app-container>header #btn-master-pedido{font-size:10px;min-width:auto;padding:8px 7px}
+}
+
